@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>475</width>
+    <height>344</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>475</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_Arquivo">
+    <property name="title">
+     <string>&amp;Arquivo</string>
+    </property>
+    <addaction name="action_Novo_mapa"/>
+    <addaction name="action_Salvar_Mapa"/>
+    <addaction name="actionSalvar_como"/>
+    <addaction name="separator"/>
+    <addaction name="action_Fechar_mapa"/>
+    <addaction name="separator"/>
+    <addaction name="actionSai_r"/>
+   </widget>
+   <widget class="QMenu" name="menuExibir">
+    <property name="title">
+     <string>&amp;Exibir</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuAjuda">
+    <property name="title">
+     <string>A&amp;juda</string>
+    </property>
+    <addaction name="actionSobre"/>
+   </widget>
+   <addaction name="menu_Arquivo"/>
+   <addaction name="menuExibir"/>
+   <addaction name="menuAjuda"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="action_Novo_mapa">
+   <property name="text">
+    <string>&amp;Novo mapa</string>
+   </property>
+  </action>
+  <action name="action_Salvar_Mapa">
+   <property name="text">
+    <string>&amp;Salvar Mapa</string>
+   </property>
+  </action>
+  <action name="actionSalvar_como">
+   <property name="text">
+    <string>Salvar &amp;como...</string>
+   </property>
+  </action>
+  <action name="action_Fechar_mapa">
+   <property name="text">
+    <string>&amp;Fechar mapa</string>
+   </property>
+  </action>
+  <action name="actionSai_r">
+   <property name="text">
+    <string>Sai&amp;r</string>
+   </property>
+  </action>
+  <action name="actionSobre">
+   <property name="text">
+    <string>&amp;Sobre</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

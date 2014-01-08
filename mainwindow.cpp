@@ -1,0 +1,239 @@
+#include "mainwindow.h"
+//#include "ui_mainwindow.h"
+#include <QtWidgets>
+#include <QtGui>
+#include "tileseteditor.h"
+
+#include <QDebug>
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent)//,
+    //ui(new Ui::MainWindow)
+{
+    //ui->setupUi(this);
+
+    createActions();
+    createToolBars();
+    createMenus();
+    createStatusBar();
+
+    readSettings();
+
+    setCurrentFile("");
+    setUnifiedTitleAndToolBarOnMac(true);
+
+    tilesetImage = new QImage(QString("data/tileset.png"));
+
+    if(tilesetImage)
+        qDebug() << "Imagem carregada";
+    else
+        qDebug() << "Imagem não encontrada";
+
+
+    tilesetEditor = new TilesetEditor(tilesetImage,this);
+
+    tilesetDock = new QDockWidget(tr("Tileset"), this);
+    tilesetDock->setWidget(tilesetEditor);
+    tilesetDock->setMinimumWidth(200);
+
+    addDockWidget(Qt::LeftDockWidgetArea, tilesetDock);
+
+    QLabel* label = new QLabel("Teste", this);
+    setCentralWidget(label);
+
+    QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),this, SLOT(updateStatusBar(const QString &)) );
+
+
+
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if(maybeSave()) {
+        writeSettings();
+        event->accept();
+    } else {
+        event->ignore();
+    }
+}
+
+void MainWindow::newFile()
+{
+    if(maybeSave()) {
+        setCurrentFile("");
+    }
+}
+
+void MainWindow::open()
+{
+    if (maybeSave()) {
+        QString fileName = QFileDialog::getOpenFileName(this);
+        if (!fileName.isEmpty())
+            loadFile(fileName);
+    }
+}
+
+bool MainWindow::save() {
+    if(curFile.isEmpty()) {
+        return saveAs();
+    } else {
+        return saveFile(curFile);
+    }
+}
+bool MainWindow::saveAs()
+{
+    QString fileName = QFileDialog::getSaveFileName(this);
+    if(fileName.isEmpty())
+        return false;
+
+    return saveFile(fileName);
+}
+
+void MainWindow::about()
+{
+    QMessageBox::about(this, tr("Sobre Ferramenta"),
+        tr("<b>Map Builder</b> é uma ferramenta para construção "
+           "de mapas para serem utilizados pela aplicação de análise "
+           " de dados de jogos."));
+}
+
+void MainWindow::documentWasModified()
+{
+    setWindowModified(true);
+}
+
+void MainWindow::updateStatusBar(const QString &text)
+{
+    statusBar()->showMessage(text);
+    qDebug() << "Update!";
+}
+
+//----- Setup -----//
+void MainWindow::createActions()
+{
+    newAction = new QAction(QIcon(":/images/new.png"), tr("&Novo mapa"),this);
+    newAction->setShortcuts(QKeySequence::New);
+    newAction->setStatusTip(tr("Cria um novo mapa"));
+    connect(newAction, SIGNAL(triggered()), this,
+            SLOT(newFile()));
+
+    openAction = new QAction(QIcon(":/images/open.png"), tr("Abrir &mapa"),this);
+    openAction->setShortcuts(QKeySequence::Open);
+    openAction->setStatusTip(tr("Abre o mapa"));
+    connect(openAction, SIGNAL(triggered()), this,
+            SLOT(open()));
+
+    saveAction = new QAction(QIcon(":/images/save.png"), tr("&Salvar mapa"),this);
+    saveAction->setShortcuts(QKeySequence::Save);
+    saveAction->setStatusTip(tr("Salva o mapa"));
+    connect(saveAction, SIGNAL(triggered()), this,
+            SLOT(save()));
+
+    saveAsAction = new QAction(tr("&Salvar como..."),this);
+    saveAsAction->setShortcuts(QKeySequence::SaveAs);
+    saveAsAction->setStatusTip(tr("Salva o mapa com um novo nome"));
+    connect(saveAction, SIGNAL(triggered()), this,
+            SLOT(saveAs()));
+
+    exitAction = new QAction(tr("Sai&r mapa"),this);
+    exitAction->setShortcuts(QKeySequence::Quit);
+    exitAction->setStatusTip(tr("Sai da ferramenta"));
+    connect(exitAction, SIGNAL(triggered()), this,
+            SLOT(close()));
+
+    aboutAction = new QAction(tr("&Sobre"),this);
+    aboutAction->setShortcuts(QKeySequence::Save);
+    aboutAction->setStatusTip(tr("Sobre a ferramenta"));
+    connect(aboutAction, SIGNAL(triggered()), this,
+            SLOT(about()));
+}
+
+void MainWindow::createMenus()
+{
+    fileMenu = menuBar()->addMenu(tr("&Arquivo"));
+    fileMenu->addAction(newAction);
+    fileMenu->addAction(openAction);
+    fileMenu->addAction(saveAction);
+    fileMenu->addAction(saveAsAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(exitAction);
+
+    editMenu = menuBar()->addMenu(tr("&Editar"));
+
+
+    viewMenu = menuBar()->addMenu(tr("Exi&bir"));
+
+    viewFerramentasSubMenu = viewMenu->addMenu("&Barra de ferramentas");
+    viewFerramentasSubMenu->addAction(fileToolBar->toggleViewAction());
+    viewFerramentasSubMenu->addAction(editToolBar->toggleViewAction());
+
+    helpMenu = menuBar()->addMenu(tr("A&juda"));
+    helpMenu->addAction(aboutAction);
+}
+
+void MainWindow::createToolBars()
+{
+    fileToolBar = addToolBar(tr("Arquivo"));
+    fileToolBar->addAction(newAction);
+    fileToolBar->addAction(openAction);
+    fileToolBar->addAction(saveAction);
+
+    editToolBar = addToolBar(tr("Editar"));
+}
+
+void MainWindow::createStatusBar()
+{
+    statusBar()->showMessage(tr("Pronto"));
+}
+
+void MainWindow::readSettings()
+{
+    QSettings settings("QtProject", "MapBuilder");
+    QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
+    QSize size = settings.value("size", QSize(400, 400)).toSize();
+    resize(size);
+    move(pos);
+}
+
+void MainWindow::writeSettings()
+{
+    QSettings settings("QtProject", "MapBuilder");
+    settings.setValue("pos", pos());
+    settings.setValue("size", size());
+}
+
+bool MainWindow::maybeSave()
+{
+    return true;
+}
+bool MainWindow::saveFile(const QString &fileName)
+{
+    if(fileName.isEmpty())
+        return false;
+    return true;
+}
+void MainWindow::loadFile(const QString &fileName)
+{
+    if(fileName.isEmpty())
+        return;
+}
+
+void MainWindow::setCurrentFile(const QString &fileName)
+{
+    curFile = fileName;
+    QString shownName = curFile;
+    if(curFile.isEmpty())
+        shownName = "untitled";
+    setWindowFilePath(shownName);
+}
+QString MainWindow::strippedName(const QString &fullFileName)
+//! [48] //! [49]
+{
+    return QFileInfo(fullFileName).fileName();
+}
+
+MainWindow::~MainWindow()
+{
+    //delete ui;
+    delete tilesetImage;
+}
