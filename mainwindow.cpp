@@ -31,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     mapView = new MapView(tilesetImage,this);
     setCentralWidget(mapView);
 
+
     QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),
                      this, SLOT(updateStatusBar(const QString &)) );
     QObject::connect(mapView, SIGNAL(mapChange()),
@@ -64,7 +65,18 @@ void MainWindow::newFile()
 {
     if(maybeSave()) {
         setCurrentFile("");
-        mapView->newMap(QSize(200,200));
+        bool ok;
+        qDebug() << "New save empty? " << curFile.isEmpty();
+        int sizeX = QInputDialog::getInt(this, tr("Digite o tamanho do mapa"),
+                                         tr("Largura:"), 12, 1, 2147483647, 1, &ok);
+        if(!ok) return;
+
+        int sizeY = QInputDialog::getInt(this, tr("Digite o tamanho do mapa"),
+                                         tr("Altura:"), 12, 1, 2147483647, 1, &ok);
+
+        if(!ok) return;
+
+        mapView->newMap(QSize(sizeX,sizeY));
 
     }
 }

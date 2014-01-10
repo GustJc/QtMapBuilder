@@ -16,6 +16,7 @@ protected:
     QImage* m_tileset;
 private:
     QGraphicsScene* scene;
+    int m_gridInterval;
 signals:
     void mapChange();
 

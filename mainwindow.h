@@ -8,6 +8,7 @@ class QDockWidget;
 class TilesetEditor;
 class QImage;
 class MapView;
+class QGraphicsView;
 namespace Ui {
 class MainWindow;
 }
