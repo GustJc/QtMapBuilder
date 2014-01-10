@@ -7,6 +7,7 @@ class QMenu;
 class QDockWidget;
 class TilesetEditor;
 class QImage;
+class MapView;
 namespace Ui {
 class MainWindow;
 }
@@ -28,12 +29,13 @@ private slots:
     bool save();
     bool saveAs();
     void about();
-    void documentWasModified();
+    void mapWasModified();
     void updateStatusBar(const QString &text );
 protected:
     void closeEvent(QCloseEvent *event);
 
     QImage* tilesetImage;
+    MapView* mapView;
 private:
     void createActions();
     void createMenus();

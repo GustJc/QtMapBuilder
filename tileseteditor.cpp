@@ -4,7 +4,7 @@
 #include <QGraphicsWidget>
 #include <QMouseEvent>
 TilesetEditor::TilesetEditor(QImage *image, QWidget *parent) :
-    QWidget(parent)
+    QGraphicsView(parent)
 {
     m_tileset = image;
 
@@ -21,23 +21,28 @@ TilesetEditor::TilesetEditor(QImage *image, QWidget *parent) :
 
 
 
-    view = new QGraphicsView(scene,this);
-    view->setScene(scene);
 
-    QPalette Pal(palette());
-    Pal.setColor(QPalette::Background, Qt::darkGray);
+
+    //QPalette Pal(palette());
+    //Pal.setColor(QPalette::Background, Qt::darkGray);
+
+    //this->setPalette(Pal);
+    setBackgroundBrush(QBrush(Qt::darkGray));
     this->setAutoFillBackground(true);
-    this->setPalette(Pal);
 
     clickStart.setX(-1);
 
-    view->viewport()->installEventFilter(this);
+    viewport()->installEventFilter(this);
+
+    setScene(scene);
+    setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
 
 }
 
 void TilesetEditor::mousePressEvent(QMouseEvent *event)
 {
-    QPointF mouse = view->mapToScene(event->x(), event->y());
+    QPointF mouse = this->mapToScene(event->x(), event->y());
 
     clickStart.setX(mouse.x()/16);
     clickStart.setY(mouse.y()/16);
@@ -57,8 +62,10 @@ bool TilesetEditor::eventFilter(QObject *, QEvent *event)
 
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>( event );
 
-        QPoint mouse(mouseEvent->pos());
-        mouse /= 16;
+        QPointF mouseFloat = this->mapToScene(mouseEvent->pos());
+        QPoint mouse((int)mouseFloat.x(), (int)mouseFloat.y() );
+
+        mouse/= 16;
 
 
         if(mouse.x() > clickStart.x()){

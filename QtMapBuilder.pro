@@ -21,4 +21,8 @@ HEADERS  += mainwindow.h \
     tileseteditor.h \
     mapview.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    tileseteditor.ui
+
+RESOURCES += \
+    QtMapBuilder.qrc

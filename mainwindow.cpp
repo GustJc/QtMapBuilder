@@ -3,7 +3,7 @@
 #include <QtWidgets>
 #include <QtGui>
 #include "tileseteditor.h"
-
+#include "mapview.h"
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -11,16 +11,6 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui(new Ui::MainWindow)
 {
     //ui->setupUi(this);
-
-    createActions();
-    createToolBars();
-    createMenus();
-    createStatusBar();
-
-    readSettings();
-
-    setCurrentFile("");
-    setUnifiedTitleAndToolBarOnMac(true);
 
     tilesetImage = new QImage(QString("data/tileset.png"));
 
@@ -38,10 +28,23 @@ MainWindow::MainWindow(QWidget *parent) :
 
     addDockWidget(Qt::LeftDockWidgetArea, tilesetDock);
 
-    QLabel* label = new QLabel("Teste", this);
-    setCentralWidget(label);
+    mapView = new MapView(tilesetImage,this);
+    setCentralWidget(mapView);
 
-    QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),this, SLOT(updateStatusBar(const QString &)) );
+    QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),
+                     this, SLOT(updateStatusBar(const QString &)) );
+    QObject::connect(mapView, SIGNAL(mapChange()),
+                     this, SLOT(mapWasModified()));
+
+    createActions();
+    createToolBars();
+    createMenus();
+    createStatusBar();
+
+    readSettings();
+
+    setCurrentFile("");
+    setUnifiedTitleAndToolBarOnMac(true);
 
 
 
@@ -61,6 +64,8 @@ void MainWindow::newFile()
 {
     if(maybeSave()) {
         setCurrentFile("");
+        mapView->newMap(QSize(200,200));
+
     }
 }
 
@@ -75,14 +80,17 @@ void MainWindow::open()
 
 bool MainWindow::save() {
     if(curFile.isEmpty()) {
+        qDebug() << "saveAs";
         return saveAs();
     } else {
+        qDebug("saveFile");
         return saveFile(curFile);
     }
 }
 bool MainWindow::saveAs()
 {
     QString fileName = QFileDialog::getSaveFileName(this);
+    qDebug() << "saveAs QFileDialog: " << fileName;
     if(fileName.isEmpty())
         return false;
 
@@ -97,7 +105,7 @@ void MainWindow::about()
            " de dados de jogos."));
 }
 
-void MainWindow::documentWasModified()
+void MainWindow::mapWasModified()
 {
     setWindowModified(true);
 }
@@ -132,7 +140,7 @@ void MainWindow::createActions()
     saveAsAction = new QAction(tr("&Salvar como..."),this);
     saveAsAction->setShortcuts(QKeySequence::SaveAs);
     saveAsAction->setStatusTip(tr("Salva o mapa com um novo nome"));
-    connect(saveAction, SIGNAL(triggered()), this,
+    connect(saveAsAction, SIGNAL(triggered()), this,
             SLOT(saveAs()));
 
     exitAction = new QAction(tr("Sai&r mapa"),this);
@@ -142,7 +150,6 @@ void MainWindow::createActions()
             SLOT(close()));
 
     aboutAction = new QAction(tr("&Sobre"),this);
-    aboutAction->setShortcuts(QKeySequence::Save);
     aboutAction->setStatusTip(tr("Sobre a ferramenta"));
     connect(aboutAction, SIGNAL(triggered()), this,
             SLOT(about()));
@@ -208,6 +215,7 @@ bool MainWindow::maybeSave()
 }
 bool MainWindow::saveFile(const QString &fileName)
 {
+    qDebug() << "saveFile";
     if(fileName.isEmpty())
         return false;
     return true;
@@ -224,7 +232,8 @@ void MainWindow::setCurrentFile(const QString &fileName)
     QString shownName = curFile;
     if(curFile.isEmpty())
         shownName = "untitled";
-    setWindowFilePath(shownName);
+
+    setWindowTitle(QString("%1 - %2[*]").arg("MapBuilder").arg(shownName));
 }
 QString MainWindow::strippedName(const QString &fullFileName)
 //! [48] //! [49]

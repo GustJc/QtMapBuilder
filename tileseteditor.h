@@ -6,7 +6,8 @@
 
 #include <QStyleOptionViewItem>
 class QImage;
-class TilesetEditor : public QWidget
+class ScrollArea;
+class TilesetEditor : public QGraphicsView
 {
     Q_OBJECT
 public:
@@ -20,6 +21,7 @@ protected:
     bool eventFilter(QObject *dist, QEvent *event);
 
 
+
 signals:
     void statusTipUpdated(const QString &text);
 
@@ -28,7 +30,6 @@ public slots:
 private:
     QImage* m_tileset;
 
-    QGraphicsView  *view;
     QGraphicsScene *scene;
 
     QGraphicsRectItem *selection;
