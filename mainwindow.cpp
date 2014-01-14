@@ -34,8 +34,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),
                      this, SLOT(updateStatusBar(const QString &)) );
+
     QObject::connect(mapView, SIGNAL(mapChange()),
                      this, SLOT(mapWasModified()));
+
+    QObject::connect(mapView, SIGNAL(statusTipUpdated(const QString &)),
+                     this, SLOT(updateStatusBar(const QString &)) );
+
+    QObject::connect(tilesetEditor, SIGNAL(targetTileChange(int,int)),
+                     mapView, SLOT(targetTileChanged(int,int)));
 
     createActions();
     createToolBars();
@@ -85,8 +92,9 @@ void MainWindow::open()
 {
     if (maybeSave()) {
         QString fileName = QFileDialog::getOpenFileName(this);
-        if (!fileName.isEmpty())
-            loadFile(fileName);
+        if (!fileName.isEmpty()){
+            mapView->load(fileName);
+        }
     }
 }
 
@@ -231,11 +239,6 @@ bool MainWindow::saveFile(const QString &fileName)
     if(fileName.isEmpty())
         return false;
     return true;
-}
-void MainWindow::loadFile(const QString &fileName)
-{
-    if(fileName.isEmpty())
-        return;
 }
 
 void MainWindow::setCurrentFile(const QString &fileName)

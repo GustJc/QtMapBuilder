@@ -19,7 +19,8 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     tileseteditor.h \
-    mapview.h
+    mapview.h \
+    defines.h
 
 FORMS    += mainwindow.ui \
     tileseteditor.ui

@@ -44,7 +44,6 @@ private:
     void createStatusBar();
     void readSettings();
     bool maybeSave();
-    void loadFile(const QString &fileName);
     bool saveFile(const QString &fileName);
     void writeSettings();
     void saveSettings();

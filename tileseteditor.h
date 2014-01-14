@@ -13,17 +13,15 @@ class TilesetEditor : public QGraphicsView
 public:
     explicit TilesetEditor(QImage* image, QWidget *parent = 0);
 
-
-    void mouseReleaseEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
 protected:
     void mousePressEvent( QMouseEvent * event );
     bool eventFilter(QObject *dist, QEvent *event);
-
-
+    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
 
 signals:
     void statusTipUpdated(const QString &text);
+    void targetTileChange(int startIndex, int endIndex);
 
 public slots:
 
@@ -37,6 +35,8 @@ private:
 
     QPoint clickStart;
     QPoint clickEnd;
+
+    bool scrollClick;
 
 };
 

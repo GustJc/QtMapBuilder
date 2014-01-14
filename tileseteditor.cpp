@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QGraphicsWidget>
 #include <QMouseEvent>
+#include <QtMath>
+#include <QScrollBar>
 TilesetEditor::TilesetEditor(QImage *image, QWidget *parent) :
     QGraphicsView(parent)
 {
@@ -37,15 +39,17 @@ TilesetEditor::TilesetEditor(QImage *image, QWidget *parent) :
     setScene(scene);
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
+    scrollClick = false;
 
 }
 
 void TilesetEditor::mousePressEvent(QMouseEvent *event)
 {
     QPointF mouse = this->mapToScene(event->x(), event->y());
+    qDebug() << mouse << "width: " << mouse.y() << " height: " << m_tileset->height();
 
-    clickStart.setX(mouse.x()/16);
-    clickStart.setY(mouse.y()/16);
+    clickStart.setX( qFloor(mouse.x()/16) );
+    clickStart.setY( qFloor(mouse.y()/16) );
 
     clickEnd = clickStart;
 
@@ -57,31 +61,44 @@ bool TilesetEditor::eventFilter(QObject *, QEvent *event)
 {
     if( event->type() == QEvent::MouseMove)
     {
-
+        qDebug() << scrollClick;
+        if(scrollClick || horizontalScrollBar()->isSliderDown() ||
+                verticalScrollBar()->isSliderDown()) return false;
         if(clickStart.x() < 0) return false;
 
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>( event );
 
         QPointF mouseFloat = this->mapToScene(mouseEvent->pos());
-        QPoint mouse((int)mouseFloat.x(), (int)mouseFloat.y() );
+        QPoint mouse(mouseFloat.x(), mouseFloat.y() );
+        qDebug() << mouse;
 
-        mouse/= 16;
+        if(mouse.x() > m_tileset->width() || mouse.x() < 0 ) {
+            return false;
+        }
+        if(mouse.y() > m_tileset->height() || mouse.y() < 0) {
+            return false;
+        }
 
+        mouse.setX(qFloor(mouse.x()/16));
+        mouse.setY(qFloor(mouse.y()/16));
+        qDebug() << mouse;
 
-        if(mouse.x() > clickStart.x()){
-            clickEnd.setX(mouse.x());
+        if(mouse.x() >= clickStart.x()){
+            clickEnd.setX( qFloor(mouse.x()) );
         }
         else
-            clickStart.setX(mouse.x());
+            clickStart.setX( qFloor(mouse.x()) );
 
-        if(mouse.y() > clickStart.y()){
-            clickEnd.setY(mouse.y());
+        if(mouse.y() >= clickStart.y()){
+            clickEnd.setY( qFloor(mouse.y()));
         }
         else
-            clickStart.setY(mouse.y());
+            clickStart.setY( qFloor(mouse.y()) );
 
 
-        QPoint selectionSize = clickEnd - clickStart;
+        QPoint selectionSize = (clickEnd - clickStart);
+        selectionSize+= QPoint(1,1);
+        qDebug() << "ClickEndStart: " << clickStart <<" end: " << clickEnd;
         selection->setPos(clickStart.x()*16,clickStart.y()*16);
         selection->setRect(0,0,selectionSize.x()*16,selectionSize.y()*16);
 
@@ -89,6 +106,21 @@ bool TilesetEditor::eventFilter(QObject *, QEvent *event)
 
         emit(statusTipUpdated(QString("%1, %2").arg(clickStart.x()).arg(clickStart.y())));
 
+    } else
+    if(event->type() == QEvent::MouseButtonPress){
+        if(horizontalScrollBar()->isSliderDown()) {
+            return true;
+        }
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>( event );
+        QPointF mouse = this->mapToScene(mouseEvent->x(), mouseEvent->y());
+        if(mouse.x() > m_tileset->width() || mouse.x() < 0 ) {
+            scrollClick = true;
+            return true;
+        }
+        if(mouse.y() > m_tileset->height() || mouse.y() < 0) {
+            scrollClick = true;
+            return true;
+        }
     }
 
     return false;
@@ -96,7 +128,12 @@ bool TilesetEditor::eventFilter(QObject *, QEvent *event)
 
 void TilesetEditor::mouseReleaseEvent(QMouseEvent *)
 {
-    clickStart.setX(-1);
+    int targetStart = clickStart.x()  + clickStart.y()*int(qFloor(m_tileset->width()/16) );
+    int targetEnd   = clickEnd.x()    + clickEnd.y()*int(qFloor(m_tileset->width()/16) );
+    qDebug() << targetStart << "tEnd: " << targetEnd;
+    emit(targetTileChange(targetStart, targetEnd));
+
+    scrollClick = false;
 }
 
 void TilesetEditor::mouseMoveEvent(QMouseEvent *)
