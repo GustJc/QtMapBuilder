@@ -173,6 +173,28 @@ void MainWindow::createActions()
     aboutAction->setStatusTip(tr("Sobre a ferramenta"));
     connect(aboutAction, SIGNAL(triggered()), this,
             SLOT(about()));
+
+    editPathAction = new QAction(QIcon(":/images/edit.png"),tr("Editar caminho"),this);
+    editPathAction->setStatusTip(tr("Edita propriedades dos blocos, se passáveis ou não"));
+    editPathAction->setShortcut(tr("TAB"));
+    editPathAction->setCheckable(true);
+    connect(editPathAction, SIGNAL(triggered()), mapView,
+            SLOT(toogleEditMode()) );
+
+    showPathAction = new QAction(QIcon(":/images/show.png"),tr("Mostrar caminhos"),this);
+    showPathAction->setStatusTip(tr("Mostra propriedades dos blocos, se passáveis ou não"));
+    showPathAction->setShortcut(tr("CTRL+H"));
+    showPathAction->setCheckable(true);
+    connect(showPathAction, SIGNAL(triggered()), mapView,
+            SLOT(toogleShowPath()) );
+
+    showGridAction = new QAction(QIcon(":/images/grid.png"),tr("Mostrar quadrados"),this);
+    showGridAction->setStatusTip(tr("Mostra divisão entre os blocos"));
+    showGridAction->setShortcut(tr("CTRL+G"));
+    showGridAction->setCheckable(true);
+    showGridAction->setChecked(true);
+    connect(showGridAction, SIGNAL(triggered()), mapView,
+            SLOT(toogleShowGrid()) );
 }
 
 void MainWindow::createMenus()
@@ -206,6 +228,11 @@ void MainWindow::createToolBars()
     fileToolBar->addAction(saveAction);
 
     editToolBar = addToolBar(tr("Editar"));
+    editToolBar->addAction(editPathAction);
+    editToolBar->addAction(showPathAction);
+    editToolBar->addSeparator();
+
+    editToolBar->addAction(showGridAction);
 }
 
 void MainWindow::createStatusBar()

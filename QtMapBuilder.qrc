@@ -6,5 +6,8 @@
         <file>images/open.png</file>
         <file>images/paste.png</file>
         <file>images/save.png</file>
+        <file>images/edit.png</file>
+        <file>images/show.png</file>
+        <file>images/grid.png</file>
     </qresource>
 </RCC>

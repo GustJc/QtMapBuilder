@@ -21,7 +21,12 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    void paintMap(int mouseX, int mouseY);
+
+    void editModeMousePress(QMouseEvent* event);
+    void editModeMouseMoveEvent(QMouseEvent* event);
+
+    void showPathMousePress(QMouseEvent* event);
+    void showPathMouseMoveEvent(QMouseEvent* event);
 
     QImage* m_tileset;
 signals:
@@ -34,6 +39,10 @@ public slots:
 
     void save(const QString &filename);
     void load(const QString &filename);
+
+    void toogleEditMode();
+    void toogleShowPath();
+    void toogleShowGrid();
 private:
     bool isValidMapPosition(QPoint pos);
     QGraphicsScene* scene;
@@ -42,10 +51,19 @@ private:
     int startId;
     int endId;
     QVector<QVector<Tile> > mapHolder;
-    bool m_showGrid;
     bool isMouseHold;
 
     int m_tilesetLen;
+
+    //Actions
+    bool m_showPath;
+    bool m_editMode;
+    bool m_showGrid;
+private:
+    void paintMap(int mouseX, int mouseY);
+    void paintTooglePath();
+
+
 };
 
 #endif // MAPVIEW_H
