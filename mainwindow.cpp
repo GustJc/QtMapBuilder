@@ -4,7 +4,37 @@
 #include <QtGui>
 #include "tileseteditor.h"
 #include "mapview.h"
+#include "globals.h"
 #include <QDebug>
+
+void MainWindow::populateTreeList()
+{
+    Entity ent;
+    ent.setEnemy(2,100,50,20,4,100);
+    ent.mName = "Gobler";
+
+    g_entitylist.push_back(ent);
+
+    for(int i = 0; i < g_entitylist.size(); ++i) {
+        QTreeWidgetItem* item = new QTreeWidgetItem(entitySelector);
+        item->setText(0, g_entitylist.at(i).mName);
+        switch(g_entitylist.at(i).typeId()) {
+        case ENTITY_ENEMY:
+            item->setText(1, tr("Inimigo"));
+            break;
+        case ENTITY_ITEM:
+            item->setText(1, tr("Item"));
+            break;
+        case ENTITY_GOLD:
+            item->setText(1, tr("Dinheiro"));
+            break;
+        default:
+            item->setText(1, tr("Indefinido"));
+        }
+
+    }
+
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)//,
@@ -20,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
         qDebug() << "Imagem não encontrada";
 
 
+    //Tileset editor setup
     tilesetEditor = new TilesetEditor(tilesetImage,this);
 
     tilesetDock = new QDockWidget(tr("Tileset"), this);
@@ -53,6 +84,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     setCurrentFile("");
     setUnifiedTitleAndToolBarOnMac(true);
+
+    entitySelector = new QTreeWidget(this);
+    QStringList columnNames;
+        columnNames << "Entidade" << "Tipo";
+    entitySelector->setHeaderLabels(columnNames);
+    entitySelector->setRootIsDecorated(false);
+    entitySelector->setColumnCount(2);
+
+    populateTreeList();
+
+    //tilesetDock->setWidget(entitySelector);
 
 
 
@@ -278,7 +320,6 @@ void MainWindow::setCurrentFile(const QString &fileName)
     setWindowTitle(QString("%1 - %2[*]").arg("MapBuilder").arg(shownName));
 }
 QString MainWindow::strippedName(const QString &fullFileName)
-//! [48] //! [49]
 {
     return QFileInfo(fullFileName).fileName();
 }

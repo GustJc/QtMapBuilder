@@ -15,15 +15,22 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     tileseteditor.cpp \
-    mapview.cpp
+    mapview.cpp \
+    entityadddialog.cpp \
+    entity.cpp \
+    globals.cpp
 
 HEADERS  += mainwindow.h \
     tileseteditor.h \
     mapview.h \
-    defines.h
+    defines.h \
+    entityadddialog.h \
+    entity.h \
+    globals.h
 
 FORMS    += mainwindow.ui \
-    tileseteditor.ui
+    tileseteditor.ui \
+    entityadddialog.ui
 
 RESOURCES += \
     QtMapBuilder.qrc

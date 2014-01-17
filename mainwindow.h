@@ -9,6 +9,9 @@ class TilesetEditor;
 class QImage;
 class MapView;
 class QGraphicsView;
+class QTreeWidget;
+#include <QVector>
+#include "entity.h"
 namespace Ui {
 class MainWindow;
 }
@@ -23,6 +26,7 @@ public:
 
     QDockWidget* tilesetDock;
     TilesetEditor* tilesetEditor;
+    QTreeWidget* entitySelector;
 
 private slots:
     void newFile();
@@ -37,7 +41,9 @@ protected:
 
     QImage* tilesetImage;
     MapView* mapView;
+
 private:
+    void populateTreeList();
     void createActions();
     void createMenus();
     void createToolBars();

@@ -29,15 +29,19 @@ MapView::MapView(QImage *image, QWidget *parent) :
     selection = scene->addRect(QRectF(0,0,0,0),QPen(Qt::red, 2));
 
     m_gridInterval = 16;
-    m_showGrid     = true;
     isMouseHold     = false;
     startId = endId = 0;
 
     m_tilesetLen = qFloor(m_tileset->width() / m_gridInterval);
 
     m_showPath = m_editMode = false;
+    m_ShowEntities = true;
+    m_showGrid     = true;
+
+    m_selectedEntityIndex = -1;
 
 }
+
 
 void MapView::drawBackground(QPainter *painter, const QRectF &rect)
 {
@@ -95,6 +99,17 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
 
         }
     }
+    //Desenha Entidades
+    if(m_ShowEntities) {
+        for(int i = 0; i < entityHolder.size(); ++i) {
+            int idX = entityHolder[i].mGfx % m_tilesetLen;
+            int idY = entityHolder[i].mGfx / m_tilesetLen;
+            painter->drawImage(entityHolder[i].mPos.x()*m_gridInterval, entityHolder[i].mPos.y()*m_gridInterval,
+                               *m_tileset,
+                               idX*m_gridInterval, idY*m_gridInterval,
+                               m_gridInterval, m_gridInterval);
+        }
+    }
 
     // Desenha Grid
     if(m_showGrid) {
@@ -126,6 +141,7 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
  */
 void MapView::mouseMoveEvent(QMouseEvent *event)
 {
+    // Tamanho da area de seleção
     int idYStart = startId / m_tilesetLen;
     int idXStart = (startId % m_tilesetLen);
 
@@ -135,35 +151,30 @@ void MapView::mouseMoveEvent(QMouseEvent *event)
     int sizeX = (1+abs( idXStart - idXEnd) )* m_gridInterval;
     int sizeY = (1+abs( idYStart - idYEnd) )* m_gridInterval;
 
-//    qDebug() << "StartID: " << startId
-//             << "\nEndID: " << endId;
-//    qDebug() << "IdxStart: " << idXStart
-//             << "\nIdxEnd: " << idXEnd;
-//    qDebug() << sizeX;
-//    qDebug() << sizeY;
-
-    QPointF mouseFloat = this->mapToScene(event->pos());
-    QPoint  destination(mouseFloat.x(), mouseFloat.y());
-    destination.setX(qFloor(mouseFloat.x()/16));
-    destination.setY(qFloor(mouseFloat.y()/16));
-
-    if(isValidMapPosition(destination) ) {
-        Tile& t = mapHolder[destination.x()][destination.y()];
-        emit(statusTipUpdated(tr("Tile[%1][%2]: Tipo %3 Gfx %4").arg(destination.x()).arg(destination.y())
-                          .arg(t.type).arg(t.gfx)));
-    } else {
-        emit(statusTipUpdated(""));
-    }
-
     bool changed_selection = false;
-    if(qFloor(selection->x()/m_gridInterval)  != destination.x() ||
-       qFloor(selection->y()/m_gridInterval)  != destination.y() ) {
-        changed_selection = true;
-    }
+    if(m_editMode == false) {
+        QPointF mouseFloat = this->mapToScene(event->pos());
+        QPoint  destination(mouseFloat.x(), mouseFloat.y());
+        destination.setX(qFloor(mouseFloat.x()/16));
+        destination.setY(qFloor(mouseFloat.y()/16));
 
-    selection->setPos( destination*16 );
-    selection->setRect(0,0,sizeX, sizeY);
-    this->scene->update(this->viewport()->rect());
+        if(isValidMapPosition(destination) ) {
+            Tile& t = mapHolder[destination.x()][destination.y()];
+            emit(statusTipUpdated(tr("Tile[%1][%2]: Tipo %3 Gfx %4").arg(destination.x()).arg(destination.y())
+                              .arg(t.type).arg(t.gfx)));
+        } else {
+            emit(statusTipUpdated(""));
+        }
+
+        if(qFloor(selection->x()/m_gridInterval)  != destination.x() ||
+           qFloor(selection->y()/m_gridInterval)  != destination.y() ) {
+            changed_selection = true;
+        }
+
+        selection->setPos( destination*16 );
+        selection->setRect(0,0,sizeX, sizeY);
+        this->scene->update(this->viewport()->rect());
+    }
 
     //Desenha se segurando mouse
     if(isMouseHold)
@@ -176,6 +187,30 @@ void MapView::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
+
+
+void MapView::paintTooglePath()
+{
+    int pX = qFloor(selection->x()/m_gridInterval);
+    int pY = qFloor(selection->y()/m_gridInterval);
+
+    if(!isValidMapPosition(QPoint(pX,pY))) return;
+
+    int& type = mapHolder[pX][pY].type;
+
+    if(type == TYPE_BLOCK || type < 0 ) {
+        type = TYPE_PASS;
+    } else {
+        type = TYPE_BLOCK;
+    }
+}
+
+
+void MapView::mouseReleaseEvent(QMouseEvent *)
+{
+    isMouseHold = false;
+}
+//---------------- Mouse Press --------------------//
 void MapView::mousePressEvent(QMouseEvent *event)
 {
     QPointF mouse = this->mapToScene(event->pos());
@@ -188,7 +223,7 @@ void MapView::mousePressEvent(QMouseEvent *event)
         return;
     } else
     if(m_editMode) {
-        //editModeMousePress(event);
+        editModeMousePress(event);
         return;
     }
 
@@ -208,23 +243,6 @@ void MapView::mousePressEvent(QMouseEvent *event)
     repaint();
     this->scene->update(this->viewport()->rect());
 }
-
-void MapView::paintTooglePath()
-{
-    int pX = qFloor(selection->x()/m_gridInterval);
-    int pY = qFloor(selection->y()/m_gridInterval);
-
-    if(!isValidMapPosition(QPoint(pX,pY))) return;
-
-    int& type = mapHolder[pX][pY].type;
-
-    if(type == TYPE_BLOCK || type < 0 ) {
-        type = TYPE_PASS;
-    } else {
-        type = TYPE_BLOCK;
-    }
-}
-
 void MapView::showPathMousePress(QMouseEvent *)
 {
     paintTooglePath();
@@ -234,9 +252,38 @@ void MapView::showPathMousePress(QMouseEvent *)
     this->scene->update(this->viewport()->rect());
 }
 
-void MapView::mouseReleaseEvent(QMouseEvent *)
+void MapView::editModeMousePress(QMouseEvent *event)
 {
-    isMouseHold = false;
+    QPointF mouseFloat = this->mapToScene(event->pos());
+    QPoint  destination(mouseFloat.x(), mouseFloat.y());
+    destination.setX(qFloor(mouseFloat.x()/16));
+    destination.setY(qFloor(mouseFloat.y()/16));
+
+    if(isValidMapPosition(destination) ) {
+        Tile& t = mapHolder[destination.x()][destination.y()];
+        emit(statusTipUpdated(tr("Tile[%1][%2]: Tipo %3 Gfx %4").arg(destination.x()).arg(destination.y())
+                          .arg(t.type).arg(t.gfx)));
+        selection->setPos( destination*16 );
+        selection->setRect(0,0,m_gridInterval, m_gridInterval);
+        this->scene->update(this->viewport()->rect());
+        setSelectedEntityIndex();
+        qDebug() << m_selectedEntityIndex;
+    } else {
+        emit(statusTipUpdated(""));
+    }
+
+}
+
+void MapView::setSelectedEntityIndex()
+{
+    for(int i = 0; i < entityHolder.size();++i) {
+        if( qFloor(selection->x()/m_gridInterval) == entityHolder[i].mPos.x() &&
+                qFloor(selection->y()/m_gridInterval) == entityHolder[i].mPos.y() ) {
+            m_selectedEntityIndex = i;
+            return;
+        }
+    }
+    m_selectedEntityIndex = -1;
 }
 
 /*

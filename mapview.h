@@ -3,11 +3,11 @@
 
 #include <QGraphicsView>
 #include <QVector>
+#include "entity.h"
 struct Tile {
     int gfx;
     int type;
 };
-
 class QGraphicsScene;
 class MapView : public QGraphicsView
 {
@@ -51,6 +51,7 @@ private:
     int startId;
     int endId;
     QVector<QVector<Tile> > mapHolder;
+    QVector<Entity> entityHolder;
     bool isMouseHold;
 
     int m_tilesetLen;
@@ -59,6 +60,10 @@ private:
     bool m_showPath;
     bool m_editMode;
     bool m_showGrid;
+    bool m_ShowEntities;
+private:
+    void setSelectedEntityIndex();
+    int m_selectedEntityIndex;
 private:
     void paintMap(int mouseX, int mouseY);
     void paintTooglePath();
