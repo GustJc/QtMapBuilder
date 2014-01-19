@@ -14,6 +14,8 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+#include "globals.h"
 MapView::MapView(QImage *image, QWidget *parent) :
     QGraphicsView(parent)
 {
@@ -30,13 +32,17 @@ MapView::MapView(QImage *image, QWidget *parent) :
 
     m_gridInterval = 16;
     isMouseHold     = false;
-    startId = endId = 0;
+    startId = endId = entityId = 0;
+    pathId = false;
 
     m_tilesetLen = qFloor(m_tileset->width() / m_gridInterval);
 
-    m_showPath = m_editMode = false;
-    m_ShowEntities = true;
-    m_showGrid     = true;
+    g_showPath = g_editMode = g_rectangleTool = false;
+    g_ShowEntities = true;
+    g_showGrid     = true;
+    g_paintTool    = true;
+
+    g_isClickActive = false;
 
     m_selectedEntityIndex = -1;
 
@@ -67,7 +73,7 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
 
             /**** REMOVER quando alterar no engine para gravar com -1 ***/
             if(mapHolder[x][y].type <= 0) {
-                if(m_showPath){
+                if(g_showPath){
                     painter->setBrush(QBrush(Qt::red));
                     painter->setOpacity(0.5f);
                     painter->drawRect(x*m_gridInterval, y*m_gridInterval, m_gridInterval, m_gridInterval);
@@ -78,12 +84,12 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
             /*** FIM ****/
 
             int idX = mapHolder[x][y].gfx % m_tilesetLen;
-            int idY = mapHolder[x][y].gfx / m_tilesetLen;
+            int idY = qFloor(mapHolder[x][y].gfx / m_tilesetLen);
             painter->drawImage(x*m_gridInterval, y*m_gridInterval, *m_tileset,
                                idX*m_gridInterval, idY*m_gridInterval,
                                m_gridInterval, m_gridInterval);
             // Desenha Path
-            if(m_showPath) {
+            if(g_showPath) {
                 if(mapHolder[x][y].type == TYPE_BLOCK || mapHolder[x][y].type < 0 )
                     painter->setBrush(QBrush(Qt::red));
                 else
@@ -99,8 +105,27 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
 
         }
     }
+    //Desenha RectangleTool
+    if(g_rectangleTool && g_isClickActive)
+    {
+        int sizeX = qFloor(selection->rect().width()/m_gridInterval);
+        int sizeY = qFloor(selection->rect().height()/m_gridInterval);
+        int startX = qFloor(selection->pos().x()/m_gridInterval);
+        int startY = qFloor(selection->pos().y()/m_gridInterval);
+        for(int x = startX; x < mapHolder.size() &&
+                        x < startX+sizeX; ++x) {
+            for(int y = startY; y < mapHolder[x].size() &&
+                        y < startY+sizeY; ++y) {
+                int idX = startId % m_tilesetLen;
+                int idY = qFloor(startId / m_tilesetLen);
+                painter->drawImage(x*m_gridInterval, y*m_gridInterval, *m_tileset,
+                                   idX*m_gridInterval, idY*m_gridInterval,
+                                   m_gridInterval, m_gridInterval);
+            }
+        }
+    }
     //Desenha Entidades
-    if(m_ShowEntities) {
+    if(g_ShowEntities) {
         for(int i = 0; i < entityHolder.size(); ++i) {
             int idX = entityHolder[i].mGfx % m_tilesetLen;
             int idY = entityHolder[i].mGfx / m_tilesetLen;
@@ -112,7 +137,7 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
     }
 
     // Desenha Grid
-    if(m_showGrid) {
+    if(g_showGrid) {
         painter->setPen(QPen(QColor(0,0,0,50)));
         const int gridInterval = 16;
         qreal left = int(scene->sceneRect().left()) - (int(scene->sceneRect().left()) % gridInterval );
@@ -152,7 +177,8 @@ void MapView::mouseMoveEvent(QMouseEvent *event)
     int sizeY = (1+abs( idYStart - idYEnd) )* m_gridInterval;
 
     bool changed_selection = false;
-    if(m_editMode == false) {
+    //Move selecao e redesenha
+    if(g_editMode == false) {
         QPointF mouseFloat = this->mapToScene(event->pos());
         QPoint  destination(mouseFloat.x(), mouseFloat.y());
         destination.setX(qFloor(mouseFloat.x()/16));
@@ -171,23 +197,36 @@ void MapView::mouseMoveEvent(QMouseEvent *event)
             changed_selection = true;
         }
 
-        selection->setPos( destination*16 );
-        selection->setRect(0,0,sizeX, sizeY);
-        this->scene->update(this->viewport()->rect());
+        //Seleção não move quando retangleTool ativo
+        if(g_isClickActive == false) {
+            selection->setPos( destination*16 );
+
+            if(g_rectangleTool == false)
+                selection->setRect(0,0,sizeX, sizeY);
+            else
+                selection->setRect(0,0,m_gridInterval, m_gridInterval);
+
+            this->scene->update(this->viewport()->rect());
+        } else if(g_rectangleTool)
+        {  //Ajusta tamanho da seleção
+            QPoint size(m_gridInterval + destination.x()*16 - selection->pos().x(),
+                        m_gridInterval + destination.y()*16 - selection->pos().y());
+
+            selection->setRect(0,0,size.x(), size.y());
+        }
     }
 
-    //Desenha se segurando mouse
+    //Pinta se segurando mouse
     if(isMouseHold)
     {
-        if(m_showPath) {
+        if(g_showPath) {
             if(changed_selection)
                 paintTooglePath();
-        } else
-            paintMap(selection->x(), selection->y());
+        } else if(g_paintTool){
+                paintMap(selection->x(), selection->y());
+        }
     }
 }
-
-
 
 void MapView::paintTooglePath()
 {
@@ -198,11 +237,15 @@ void MapView::paintTooglePath()
 
     int& type = mapHolder[pX][pY].type;
 
-    if(type == TYPE_BLOCK || type < 0 ) {
+//    if(type == TYPE_BLOCK || type < 0 ) {
+//        type = TYPE_PASS;
+//    } else {
+//        type = TYPE_BLOCK;
+//    }
+    if(pathId)
         type = TYPE_PASS;
-    } else {
+    else
         type = TYPE_BLOCK;
-    }
 }
 
 
@@ -218,26 +261,40 @@ void MapView::mousePressEvent(QMouseEvent *event)
     if(mouse.x() >= scene->sceneRect().width() ||
        mouse.y() >= sceneRect().height()) return;
 
-    if(m_showPath) {
+    if(g_showPath) {
         showPathMousePress(event);
         return;
     } else
-    if(m_editMode) {
+    if(g_editMode) {
         editModeMousePress(event);
         return;
     }
 
-
     if(event->button() == Qt::LeftButton) {
+        if(g_rectangleTool) {
+            if(g_isClickActive == false) {
+                g_isClickActive = true;
+                isMouseHold = true;
+                return;
+            } else {
+                paintArea(selection->x(), selection->y(), selection->rect().width(), selection->rect().height());
+                g_isClickActive = false;
+                return;
+            }
+        }
         paintMap(selection->x(), selection->y());
         isMouseHold = true;
     }
 
     if(event->button() == Qt::RightButton) {
-        int pX = qFloor(mouse.x() / m_gridInterval);
-        int pY = qFloor(mouse.y() / m_gridInterval);
+        if(g_rectangleTool) {
+            g_isClickActive = false;
+        } else {
+            int pX = qFloor(mouse.x() / m_gridInterval);
+            int pY = qFloor(mouse.y() / m_gridInterval);
 
-        startId = endId = mapHolder[pX][pY].gfx;
+            startId = endId = mapHolder[pX][pY].gfx;
+        }
     }
 
     repaint();
@@ -245,6 +302,19 @@ void MapView::mousePressEvent(QMouseEvent *event)
 }
 void MapView::showPathMousePress(QMouseEvent *)
 {
+    int pX = qFloor(selection->x()/m_gridInterval);
+    int pY = qFloor(selection->y()/m_gridInterval);
+
+    const int& type = mapHolder[pX][pY].type;
+
+    if(type == TYPE_BLOCK || type < 0 ) {
+        pathId = true;
+        //type = TYPE_PASS;
+    } else {
+        pathId = false;
+        //type = TYPE_BLOCK;
+    }
+
     paintTooglePath();
     isMouseHold = true;
 
@@ -330,6 +400,28 @@ void MapView::paintMap(int mouseX, int mouseY)
     }
 }
 
+
+void MapView::paintArea(int mouseX, int mouseY, int width, int height)
+{
+    int pX = qFloor(mouseX/m_gridInterval);
+    int pY = qFloor(mouseY/m_gridInterval);
+    int pW = qFloor(width/m_gridInterval);
+    int pH = qFloor(height/m_gridInterval);
+
+    if(!isValidMapPosition( QPoint(pX, pY) ) ) {
+        return;
+    }
+
+    emit(mapChange());
+
+    for(int x = pX; x < mapHolder.size() &&
+                    x < pX+pW; ++x) {
+        for(int y = pY; y < mapHolder[x].size() &&
+                    y < pY+pH; ++y) {
+            mapHolder[x][y].gfx = startId;
+        }
+    }
+}
 
 
 void MapView::createMap(const QSize mapSize)
@@ -478,19 +570,19 @@ void MapView::load(const QString& filename)
 
 void MapView::toogleEditMode()
 {
-    m_editMode = !m_editMode;
+    g_editMode = !g_editMode;
 }
 
 void MapView::toogleShowPath()
 {
-    m_showPath = !m_showPath;
+    g_showPath = !g_showPath;
     repaint();
     this->scene->update(this->viewport()->rect());
 }
 
 void MapView::toogleShowGrid()
 {
-    m_showGrid = !m_showGrid;
+    g_showGrid = !g_showGrid;
     repaint();
     this->scene->update(this->viewport()->rect());
 }

@@ -50,22 +50,20 @@ private:
     int m_gridInterval;
     int startId;
     int endId;
+    int entityId;
+    bool pathId;
     QVector<QVector<Tile> > mapHolder;
     QVector<Entity> entityHolder;
     bool isMouseHold;
 
     int m_tilesetLen;
 
-    //Actions
-    bool m_showPath;
-    bool m_editMode;
-    bool m_showGrid;
-    bool m_ShowEntities;
 private:
     void setSelectedEntityIndex();
     int m_selectedEntityIndex;
 private:
     void paintMap(int mouseX, int mouseY);
+    void paintArea(int mouseX, int mouseY, int width, int height);
     void paintTooglePath();
 
 

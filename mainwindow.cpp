@@ -6,34 +6,24 @@
 #include "mapview.h"
 #include "globals.h"
 #include <QDebug>
+#include <QTreeWidgetItem>
 
-void MainWindow::populateTreeList()
+void MainWindow::connectObjects()
 {
-    Entity ent;
-    ent.setEnemy(2,100,50,20,4,100);
-    ent.mName = "Gobler";
+    QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),
+                     this, SLOT(updateStatusBar(const QString &)) );
 
-    g_entitylist.push_back(ent);
+    QObject::connect(mapView, SIGNAL(mapChange()),
+                     this, SLOT(mapWasModified()));
 
-    for(int i = 0; i < g_entitylist.size(); ++i) {
-        QTreeWidgetItem* item = new QTreeWidgetItem(entitySelector);
-        item->setText(0, g_entitylist.at(i).mName);
-        switch(g_entitylist.at(i).typeId()) {
-        case ENTITY_ENEMY:
-            item->setText(1, tr("Inimigo"));
-            break;
-        case ENTITY_ITEM:
-            item->setText(1, tr("Item"));
-            break;
-        case ENTITY_GOLD:
-            item->setText(1, tr("Dinheiro"));
-            break;
-        default:
-            item->setText(1, tr("Indefinido"));
-        }
+    QObject::connect(mapView, SIGNAL(statusTipUpdated(const QString &)),
+                     this, SLOT(updateStatusBar(const QString &)) );
 
-    }
+    QObject::connect(tilesetEditor, SIGNAL(targetTileChange(int,int)),
+                     mapView, SLOT(targetTileChanged(int,int)));
 
+    QObject::connect(entitySelector, SIGNAL(itemSelectionChanged()), this,
+                              SLOT(entityItemChanged()));
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -43,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->setupUi(this);
 
     tilesetImage = new QImage(QString("data/tileset.png"));
+    enemyImage   = new QImage(QString("data/chars.png"));
+    itemImage    = new QImage(QString("data/itens.png"));
 
     if(tilesetImage)
         qDebug() << "Imagem carregada";
@@ -62,19 +54,6 @@ MainWindow::MainWindow(QWidget *parent) :
     mapView = new MapView(tilesetImage,this);
     setCentralWidget(mapView);
 
-
-    QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),
-                     this, SLOT(updateStatusBar(const QString &)) );
-
-    QObject::connect(mapView, SIGNAL(mapChange()),
-                     this, SLOT(mapWasModified()));
-
-    QObject::connect(mapView, SIGNAL(statusTipUpdated(const QString &)),
-                     this, SLOT(updateStatusBar(const QString &)) );
-
-    QObject::connect(tilesetEditor, SIGNAL(targetTileChange(int,int)),
-                     mapView, SLOT(targetTileChanged(int,int)));
-
     createActions();
     createToolBars();
     createMenus();
@@ -91,10 +70,18 @@ MainWindow::MainWindow(QWidget *parent) :
     entitySelector->setHeaderLabels(columnNames);
     entitySelector->setRootIsDecorated(false);
     entitySelector->setColumnCount(2);
+    entitySelector->setMouseTracking(true);
+
+    entitySelector->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    entitySelector->setVisible(false);
 
     populateTreeList();
 
     //tilesetDock->setWidget(entitySelector);
+
+
+    connectObjects();
 
 
 
@@ -216,12 +203,14 @@ void MainWindow::createActions()
     connect(aboutAction, SIGNAL(triggered()), this,
             SLOT(about()));
 
-    editPathAction = new QAction(QIcon(":/images/edit.png"),tr("Editar caminho"),this);
-    editPathAction->setStatusTip(tr("Edita propriedades dos blocos, se passáveis ou não"));
-    editPathAction->setShortcut(tr("TAB"));
-    editPathAction->setCheckable(true);
-    connect(editPathAction, SIGNAL(triggered()), mapView,
+    editModeAction = new QAction(QIcon(":/images/edit.png"),tr("Editar entidades"),this);
+    editModeAction->setStatusTip(tr("Edita propriedades dos blocos, se passáveis ou não"));
+    editModeAction->setShortcut(tr("TAB"));
+    editModeAction->setCheckable(true);
+    connect(editModeAction, SIGNAL(triggered()), mapView,
             SLOT(toogleEditMode()) );
+    connect(editModeAction, SIGNAL(triggered(bool)), this,
+            SLOT(toogleEditMode(bool)) );
 
     showPathAction = new QAction(QIcon(":/images/show.png"),tr("Mostrar caminhos"),this);
     showPathAction->setStatusTip(tr("Mostra propriedades dos blocos, se passáveis ou não"));
@@ -237,6 +226,32 @@ void MainWindow::createActions()
     showGridAction->setChecked(true);
     connect(showGridAction, SIGNAL(triggered()), mapView,
             SLOT(toogleShowGrid()) );
+
+    //Tools
+    paintToolAction = new QAction(QIcon(":/images/paint.png"),tr("Pincel"),this);
+    paintToolAction->setStatusTip(tr("Pinta quadrados"));
+    paintToolAction->setShortcut(tr("F"));
+    paintToolAction->setCheckable(true);
+    paintToolAction->setChecked(true);
+    connect(paintToolAction, SIGNAL(triggered(bool)), this,
+            SLOT(tooglePaintTool(bool)) );
+
+    cursorToolAction = new QAction(QIcon(":/images/cursor.png"),tr("Selecionar"),this);
+    cursorToolAction->setStatusTip(tr("Seleciona e edita entidades no modo edição"));
+    cursorToolAction->setShortcut(tr("S"));
+    cursorToolAction->setCheckable(true);
+    cursorToolAction->setChecked(false);
+    cursorToolAction->setEnabled(false);
+    connect(cursorToolAction, SIGNAL(triggered(bool)), this,
+            SLOT(toogleCursorTool(bool)) );
+
+    rectangleToolAction = new QAction(QIcon(":/images/rectanglePaint.png"),tr("Retangulo"),this);
+    rectangleToolAction->setStatusTip(tr("Pinta em uma area retangular"));
+    rectangleToolAction->setShortcut(tr("SHIFT+F"));
+    rectangleToolAction->setCheckable(true);
+    rectangleToolAction->setChecked(false);
+    connect(rectangleToolAction, SIGNAL(triggered(bool)), this,
+            SLOT(toogleRectangleTool(bool)) );
 }
 
 void MainWindow::createMenus()
@@ -250,7 +265,9 @@ void MainWindow::createMenus()
     fileMenu->addAction(exitAction);
 
     editMenu = menuBar()->addMenu(tr("&Editar"));
-
+    editMenu->addAction(cursorToolAction);
+    editMenu->addAction(paintToolAction);
+    editMenu->addAction(rectangleToolAction);
 
     viewMenu = menuBar()->addMenu(tr("Exi&bir"));
 
@@ -270,7 +287,12 @@ void MainWindow::createToolBars()
     fileToolBar->addAction(saveAction);
 
     editToolBar = addToolBar(tr("Editar"));
-    editToolBar->addAction(editPathAction);
+    editToolBar->addAction(cursorToolAction);
+    editToolBar->addAction(paintToolAction);
+    editToolBar->addAction(rectangleToolAction);
+
+    editToolBar->addSeparator();
+    editToolBar->addAction(editModeAction);
     editToolBar->addAction(showPathAction);
     editToolBar->addSeparator();
 
@@ -319,6 +341,169 @@ void MainWindow::setCurrentFile(const QString &fileName)
 
     setWindowTitle(QString("%1 - %2[*]").arg("MapBuilder").arg(shownName));
 }
+
+void MainWindow::entityItemChanged()
+{
+    QTreeWidgetItem* item = entitySelector->selectedItems().first();
+
+    qDebug() << item->text(0);
+    qDebug() << item->text(1);
+    qDebug() << entitySelector->currentIndex().row();
+}
+
+void MainWindow::tooglePaintTool(bool isChecked)
+{
+    if(isChecked) {
+        g_paintTool     = true;
+        g_cursorTool    = false;
+        g_rectangleTool = false;
+        g_isClickActive = false;
+        cursorToolAction->setChecked(false);
+        rectangleToolAction->setChecked(false);
+    } else {
+        paintToolAction->setChecked(true);
+    }
+}
+
+void MainWindow::toogleRectangleTool(bool isChecked)
+{
+    if(isChecked) {
+        g_paintTool     = false;
+        g_cursorTool    = false;
+        g_rectangleTool = true;
+        g_isClickActive = false;
+        paintToolAction->setChecked(false);
+        cursorToolAction->setChecked(false);
+    } else {
+        rectangleToolAction->setChecked(true);
+    }
+}
+
+void MainWindow::toogleEditMode(bool isChecked)
+{
+    //DockWidget
+    if(isChecked)
+    {
+        tilesetDock->setWidget(entitySelector);
+        entitySelector->setVisible(true);
+        tilesetEditor->setVisible(false);
+        tilesetDock->setWindowTitle(tr("Entity"));
+    } else
+    {
+        tilesetDock->setWidget(tilesetEditor);
+        tilesetEditor->setVisible(true);
+        entitySelector->setVisible(false);
+        tilesetDock->setWindowTitle(tr("Tileset"));
+    }
+
+    //Tools
+    if(isChecked) {
+        cursorToolAction->setEnabled(true);
+    } else {
+        if(cursorToolAction->isChecked()){
+            g_paintTool     = true;
+            g_cursorTool    = false;
+            g_rectangleTool = false;
+            g_isClickActive = false;
+            paintToolAction->setChecked(true);
+            cursorToolAction->setChecked(false);
+        }
+
+        cursorToolAction->setEnabled(false);
+
+
+    }
+}
+
+void MainWindow::toogleCursorTool(bool isChecked)
+{
+    if(isChecked) {
+        g_paintTool     = false;
+        g_cursorTool    = true;
+        g_rectangleTool = false;
+        g_isClickActive = false;
+        paintToolAction->setChecked(false);
+        rectangleToolAction->setChecked(false);
+    } else {
+        cursorToolAction->setChecked(true);
+    }
+}
+
+void MainWindow::populateTreeList()
+{
+    Entity ent;
+    ent.setEnemy(2,100,50,20,4,100);
+    ent.mName = "Gobler";
+
+    Entity ent2;
+    ent2.setItem(1,100,100,10,0,0);
+    ent2.mName = "Mega Staff";
+
+    g_entitylist.push_back(ent);
+    g_entitylist.push_back(ent2);
+
+    for(int i = 0; i < g_entitylist.size(); ++i) {
+        QTreeWidgetItem* item = new QTreeWidgetItem(entitySelector);
+        item->setText(0, g_entitylist.at(i).mName);
+        switch(g_entitylist.at(i).typeId()) {
+        case ENTITY_ENEMY:
+            item->setText(1, tr("Inimigo"));
+            item->setToolTip(0,
+                             "<table>" +
+                             QString("<tr><td><b>HP:</b></td>     <td>%1</td></tr>"
+                                     "<tr><td><b>MP:</b></td>     <td>%2</td></tr>"
+                                     "<tr><td><b>Ataque:</b></td> <td>%3</td></tr>"
+                                     "<tr><td><b>Defesa:</b></td> <td>%4</td></tr>"
+                                     "<tr><td><b>Range:</b></td>  <td>%5</td></tr>"
+                                     "<tr><td><b>Delay:</b></td>  <td>%6</td></tr>"
+                                     )
+                                .arg(g_entitylist.at(i).mHp).arg(g_entitylist.at(i).mMp)
+                                .arg(g_entitylist.at(i).mAtk).arg(g_entitylist.at(i).mDef)
+                                .arg(g_entitylist.at(i).mRange).arg(g_entitylist.at(i).mDelay)+
+                             "</table>"
+                             );
+            item->setToolTip(1, item->toolTip(0));
+
+            break;
+        case ENTITY_ITEM:
+            item->setText(1, tr("Item"));
+            item->setToolTip(0,
+                             "<table>" +
+                             QString("<tr><td><b>HP:</b></td>     <td>%1</td></tr>"
+                                     "<tr><td><b>MP:</b></td>     <td>%2</td></tr>"
+                                     "<tr><td><b>Ataque:</b></td> <td>%3</td></tr>"
+                                     "<tr><td><b>Defesa:</b></td> <td>%4</td></tr>"
+                                     )
+                                .arg(g_entitylist.at(i).mHp).arg(g_entitylist.at(i).mMp)
+                                .arg(g_entitylist.at(i).mAtk).arg(g_entitylist.at(i).mDef) +
+                             "</table>"
+                             );
+            item->setToolTip(1, item->toolTip(0));
+            break;
+        case ENTITY_GOLD:
+            item->setText(1, tr("Dinheiro"));
+            item->setToolTip(0,
+                             "<table>" +
+                             QString("<tr><td><b>Gold:</b></td>     <td>%1</td></tr>"
+                                     )
+                                .arg(g_entitylist.at(i).mGold)+
+                             "</table>"
+                             );
+            item->setToolTip(1, item->toolTip(0));
+            break;
+        default:
+            item->setText(1, tr("Indefinido"));
+        }
+        item->setToolTip(0,
+                     "<html>"
+                     "<div style=\"32px; height: 32px; overflow: hidden;\">"
+                        "<img src='data/chars.png' style=\"position: absolute; left:-37px;\"/>"
+                     "</div>"
+                     "</html>");
+    }
+
+
+}
 QString MainWindow::strippedName(const QString &fullFileName)
 {
     return QFileInfo(fullFileName).fileName();
@@ -328,4 +513,6 @@ MainWindow::~MainWindow()
 {
     //delete ui;
     delete tilesetImage;
+    delete enemyImage;
+    delete itemImage;
 }

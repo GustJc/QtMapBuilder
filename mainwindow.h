@@ -10,6 +10,7 @@ class QImage;
 class MapView;
 class QGraphicsView;
 class QTreeWidget;
+class QTreeWidgetItem;
 #include <QVector>
 #include "entity.h"
 namespace Ui {
@@ -36,14 +37,24 @@ private slots:
     void about();
     void mapWasModified();
     void updateStatusBar(const QString &text );
+    void entityItemChanged();
+
+    void tooglePaintTool(bool isChecked);
+    void toogleCursorTool(bool isChecked);
+    void toogleRectangleTool(bool isChecked);
+    void toogleEditMode(bool isChecked);
 protected:
     void closeEvent(QCloseEvent *event);
 
     QImage* tilesetImage;
+    QImage* enemyImage;
+    QImage* itemImage;
+
     MapView* mapView;
 
 private:
     void populateTreeList();
+    void connectObjects();
     void createActions();
     void createMenus();
     void createToolBars();
@@ -66,15 +77,21 @@ private:
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
-    QAction *editPathAction;
+    //View/Mode
+    QAction *editModeAction;
     QAction *showPathAction;
     QAction *showGridAction;
+    //Menu
     QAction *newAction;
     QAction *openAction;
     QAction *saveAction;
     QAction *saveAsAction;
     QAction *exitAction;
     QAction *aboutAction;
+    //Tool
+    QAction *paintToolAction;
+    QAction *rectangleToolAction;
+    QAction *cursorToolAction;
 
 private:
     //Ui::MainWindow *ui;
