@@ -162,7 +162,6 @@ void MainWindow::mapWasModified()
 void MainWindow::updateStatusBar(const QString &text)
 {
     statusBar()->showMessage(text);
-    qDebug() << "Update!";
 }
 
 //----- Setup -----//
@@ -252,6 +251,22 @@ void MainWindow::createActions()
     rectangleToolAction->setChecked(false);
     connect(rectangleToolAction, SIGNAL(triggered(bool)), this,
             SLOT(toogleRectangleTool(bool)) );
+
+    startToolAction = new QAction(QIcon(":/images/start.png"),tr("Ponto de Inicio"),this);
+    startToolAction ->setStatusTip(tr("Coloca ponto de entrada do mapa(somente 1)"));
+    startToolAction ->setShortcut(tr("I"));
+    startToolAction ->setCheckable(true);
+    startToolAction ->setChecked(false);
+    connect(startToolAction, SIGNAL(triggered(bool)), this,
+            SLOT(toogleStartTool(bool)) );
+
+    endToolAction = new QAction(QIcon(":/images/end.png"),tr("Pontos de Saída"),this);
+    endToolAction ->setStatusTip(tr("Coloca pontos de saída do mapa"));
+    endToolAction ->setShortcut(tr("E"));
+    endToolAction ->setCheckable(true);
+    endToolAction ->setChecked(false);
+    connect(endToolAction, SIGNAL(triggered(bool)), this,
+            SLOT(toogleEndTool(bool)) );
 }
 
 void MainWindow::createMenus()
@@ -268,6 +283,9 @@ void MainWindow::createMenus()
     editMenu->addAction(cursorToolAction);
     editMenu->addAction(paintToolAction);
     editMenu->addAction(rectangleToolAction);
+    editMenu->addSeparator();
+    editMenu->addAction(startToolAction);
+    editMenu->addAction(endToolAction);
 
     viewMenu = menuBar()->addMenu(tr("Exi&bir"));
 
@@ -294,6 +312,8 @@ void MainWindow::createToolBars()
     editToolBar->addSeparator();
     editToolBar->addAction(editModeAction);
     editToolBar->addAction(showPathAction);
+    editToolBar->addAction(startToolAction);
+    editToolBar->addAction(endToolAction);
     editToolBar->addSeparator();
 
     editToolBar->addAction(showGridAction);
@@ -415,6 +435,32 @@ void MainWindow::toogleEditMode(bool isChecked)
     }
 }
 
+void MainWindow::toogleStartTool(bool isChecked)
+{
+    if(isChecked) {
+        g_startTool         = true;
+        g_endTool           = false;
+        g_rectangleTool     = false;
+        g_paintTool         = true;
+        updateActionsStates();
+    }
+
+    mapView->setToolSelection(START_TOOL, isChecked);
+}
+
+void MainWindow::toogleEndTool(bool isChecked)
+{
+    if(isChecked) {
+        g_startTool         = false;
+        g_endTool           = true;
+        g_rectangleTool     = false;
+        g_paintTool         = true;
+        updateActionsStates();
+    }
+
+    mapView->setToolSelection(END_TOOL, isChecked);
+}
+
 void MainWindow::toogleCursorTool(bool isChecked)
 {
     if(isChecked) {
@@ -494,12 +540,12 @@ void MainWindow::populateTreeList()
         default:
             item->setText(1, tr("Indefinido"));
         }
-        item->setToolTip(0,
-                     "<html>"
-                     "<div style=\"32px; height: 32px; overflow: hidden;\">"
-                        "<img src='data/chars.png' style=\"position: absolute; left:-37px;\"/>"
-                     "</div>"
-                     "</html>");
+//        item->setToolTip(0,
+//                     "<html>"
+//                     "<div style=\"32px; height: 32px; overflow: hidden;\">"
+//                        "<img src='data/chars.png' style=\"position: absolute; left:-37px;\"/>"
+//                     "</div>"
+//                     "</html>");
     }
 
 
@@ -515,4 +561,19 @@ MainWindow::~MainWindow()
     delete tilesetImage;
     delete enemyImage;
     delete itemImage;
+}
+
+void MainWindow::updateActionsStates()
+{
+    rectangleToolAction->setChecked(g_rectangleTool);
+    paintToolAction->setChecked(g_paintTool);
+    cursorToolAction->setChecked(g_cursorTool);
+    endToolAction->setChecked(g_endTool);
+    startToolAction->setChecked(g_startTool);
+    showPathAction->setChecked(g_showPath);
+    showGridAction->setChecked(g_showGrid);
+    editModeAction->setChecked(g_editMode);
+
+//  g_ShowEntities;
+
 }

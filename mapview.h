@@ -16,6 +16,7 @@ public:
     explicit MapView(QImage* image, QWidget *parent = 0);
 
     void createMap(const QSize mapSize);
+    void setToolSelection(int tool, bool isOn);
 protected:
     void drawBackground(QPainter* painter, const QRectF & rect);
     void mouseMoveEvent(QMouseEvent *event);

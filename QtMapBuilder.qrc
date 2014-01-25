@@ -12,5 +12,9 @@
         <file>images/paint.png</file>
         <file>images/cursor.png</file>
         <file>images/rectanglePaint.png</file>
+        <file>images/end.png</file>
+        <file>images/start.png</file>
+        <file>images/endCursor.png</file>
+        <file>images/startCursor.png</file>
     </qresource>
 </RCC>

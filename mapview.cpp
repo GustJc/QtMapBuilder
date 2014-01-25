@@ -201,7 +201,7 @@ void MapView::mouseMoveEvent(QMouseEvent *event)
         if(g_isClickActive == false) {
             selection->setPos( destination*16 );
 
-            if(g_rectangleTool == false)
+            if(g_rectangleTool == false && !g_startTool && !g_endTool)
                 selection->setRect(0,0,sizeX, sizeY);
             else
                 selection->setRect(0,0,m_gridInterval, m_gridInterval);
@@ -283,6 +283,7 @@ void MapView::mousePressEvent(QMouseEvent *event)
             }
         }
         paintMap(selection->x(), selection->y());
+        mouseMoveEvent(event); //Atualiza statusBar depois de mudar tipo sem mexer mouse, remover?
         isMouseHold = true;
     }
 
@@ -363,7 +364,7 @@ void MapView::setSelectedEntityIndex()
  */
 
 void MapView::paintMap(int mouseX, int mouseY)
-{
+{   //Ativa quando clicar ou segurar esquerdo e g_paintTool
     int pX = qFloor(mouseX/m_gridInterval);
     int pY = qFloor(mouseY/m_gridInterval);
 
@@ -375,6 +376,14 @@ void MapView::paintMap(int mouseX, int mouseY)
     //Esta dento do mapa, pode pintar
 
     emit(mapChange());
+
+    if(g_startTool) {
+        mapHolder[pX][pY].type = TYPE_START;
+        return;
+    } else if(g_endTool) {
+        mapHolder[pX][pY].type = TYPE_END;
+        return;
+    }
 
     qDebug() << "startId: " << startId << "endId: " << endId;
 
@@ -443,6 +452,26 @@ void MapView::createMap(const QSize mapSize)
             mapHolder[x][y] = t;
         }
     }
+}
+
+void MapView::setToolSelection(int tool, bool isOn)
+{
+    if(isOn == false) {
+        qDebug() << "OffCURSOR!";
+        this->setCursor(Qt::ArrowCursor);
+    } else {
+        if(tool == START_TOOL) {
+            this->setCursor(QCursor(QPixmap(":/images/startCursor.png")));
+            //this->setCursor(Qt::UpArrowCursor);
+        }
+        if(tool == END_TOOL) {
+            this->setCursor(QCursor(QPixmap(":/images/endCursor.png")));
+            //this->setCursor(Qt::UpArrowCursor);
+        }
+
+
+    }
+
 }
 
 void MapView::newMap(const QSize mapSize)

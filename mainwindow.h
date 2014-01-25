@@ -25,6 +25,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    void updateActionsStates();
+
     QDockWidget* tilesetDock;
     TilesetEditor* tilesetEditor;
     QTreeWidget* entitySelector;
@@ -41,6 +43,8 @@ private slots:
 
     void tooglePaintTool(bool isChecked);
     void toogleCursorTool(bool isChecked);
+    void toogleStartTool(bool isChecked);
+    void toogleEndTool(bool isChecked);
     void toogleRectangleTool(bool isChecked);
     void toogleEditMode(bool isChecked);
 protected:
@@ -92,6 +96,9 @@ private:
     QAction *paintToolAction;
     QAction *rectangleToolAction;
     QAction *cursorToolAction;
+
+    QAction *startToolAction;
+    QAction *endToolAction;
 
 private:
     //Ui::MainWindow *ui;
