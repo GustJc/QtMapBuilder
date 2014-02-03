@@ -16,5 +16,7 @@
         <file>images/start.png</file>
         <file>images/endCursor.png</file>
         <file>images/startCursor.png</file>
+        <file>images/enemy.png</file>
+        <file>images/item.png</file>
     </qresource>
 </RCC>

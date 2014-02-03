@@ -13,23 +13,34 @@ class MapView : public QGraphicsView
 {
     Q_OBJECT
 public:
-    explicit MapView(QImage* image, QWidget *parent = 0);
+    explicit MapView(QImage* image, QImage* character, QImage* itens, QWidget *parent = 0);
 
     void createMap(const QSize mapSize);
     void setToolSelection(int tool, bool isOn);
+
+    QPoint getPosFromGfx(int gfx, const int tilesetLen);
+
+    //Map for Lua
+    void newMapInt(int w, int h);
+    void setTile(int x, int y, int tileGfx, int tileType);
+    Tile *getTile(int x, int y);
+    void setEntity(int x, int y, Entity ent);
+    void setOverrideEntity(int x, int y, Entity ent);
+    int getMapHeight();
+    int getMapWidth();
+    void forceUpdateMap();
+    MapView(); // Para luabind, nunca usadao
 protected:
     void drawBackground(QPainter* painter, const QRectF & rect);
+    void wheelEvent(QWheelEvent* event);
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *);
 
     void editModeMousePress(QMouseEvent* event);
-    void editModeMouseMoveEvent(QMouseEvent* event);
 
     void showPathMousePress(QMouseEvent* event);
-    void showPathMouseMoveEvent(QMouseEvent* event);
-
-    QImage* m_tileset;
 signals:
     void mapChange();
     void statusTipUpdated(const QString &text);
@@ -44,6 +55,9 @@ public slots:
     void toogleEditMode();
     void toogleShowPath();
     void toogleShowGrid();
+    void toogleShowItem();
+    void toogleShowEnemy();
+    void entityListSelectionChanged(int index);
 private:
     bool isValidMapPosition(QPoint pos);
     QGraphicsScene* scene;
@@ -53,19 +67,30 @@ private:
     int endId;
     int entityId;
     bool pathId;
+    bool isMouseHold;
+
     QVector<QVector<Tile> > mapHolder;
     QVector<Entity> entityHolder;
-    bool isMouseHold;
+    QImage* m_tileset;
+    QImage* m_charset;
+    QImage* m_itemset;
+
 
     int m_tilesetLen;
 
 private:
-    void setSelectedEntityIndex();
-    int m_selectedEntityIndex;
-private:
+    void setSelectedEntityIndexFromClick();
+    int m_selectedEntityHolderIndex;
+
+    int m_selectedEntityListIndex;
+private: //Tools
     void paintMap(int mouseX, int mouseY);
     void paintArea(int mouseX, int mouseY, int width, int height);
     void paintTooglePath();
+public:
+    bool isValidEntityPos(QPoint pos);
+    bool isValidEntityAbsPos(QPoint absPos);
+    void addEntity(QPoint absPos, int index);
 
 
 };

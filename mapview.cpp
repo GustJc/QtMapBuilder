@@ -1,5 +1,8 @@
 #include "mapview.h"
 #include "defines.h"
+
+#include "entityadddialog.h"
+
 #include <QGraphicsScene>
 #include <QDebug>
 #include <QPainter>
@@ -14,12 +17,15 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "globals.h"
-MapView::MapView(QImage *image, QWidget *parent) :
+MapView::MapView(QImage *image, QImage *character, QImage *itens, QWidget *parent) :
     QGraphicsView(parent)
 {
     m_tileset = image;
+    m_charset = character;
+    m_itemset = itens;
 
     scene = new QGraphicsScene(0,0,256,256,this);
 
@@ -38,13 +44,11 @@ MapView::MapView(QImage *image, QWidget *parent) :
     m_tilesetLen = qFloor(m_tileset->width() / m_gridInterval);
 
     g_showPath = g_editMode = g_rectangleTool = false;
-    g_ShowEntities = true;
-    g_showGrid     = true;
     g_paintTool    = true;
 
     g_isClickActive = false;
 
-    m_selectedEntityIndex = -1;
+    m_selectedEntityHolderIndex = m_selectedEntityListIndex = -1;
 
 }
 
@@ -101,10 +105,35 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
 
                 painter->setOpacity(1.0f);
             }
+            if(mapHolder[x][y].type == TYPE_START) {
+                painter->drawImage(x*m_gridInterval, y*m_gridInterval, QImage(":/images/startCursor.png"));
+            } else if(mapHolder[x][y].type == TYPE_END) {
+                painter->drawImage(x*m_gridInterval, y*m_gridInterval, QImage(":/images/endCursor.png"));
+            }
 
 
         }
     }
+    //Desenha itens e chars
+    for(int i = 0; i < entityHolder.size();++i) {
+        const int& type = entityHolder.at(i).typeId();
+        if(type == ENTITY_ENEMY && g_showChars == false)
+            continue;
+        else if(type == ENTITY_ITEM || type == ENTITY_GOLD)
+                if(g_ShowItens == false) continue;
+
+        QImage* image = m_itemset;
+        if(type == ENTITY_ENEMY) image = m_charset;
+
+        int tilesetLen = qFloor(image->width()/m_gridInterval);
+        QPoint idPos = getPosFromGfx(entityHolder[i].mGfx, tilesetLen);
+
+        painter->drawImage(entityHolder[i].mPos.x()*m_gridInterval, entityHolder[i].mPos.y()*m_gridInterval,
+                           *image,
+                           idPos.x()*m_gridInterval, idPos.y()*m_gridInterval,
+                           m_gridInterval, m_gridInterval);
+    }
+
     //Desenha RectangleTool
     if(g_rectangleTool && g_isClickActive)
     {
@@ -122,17 +151,6 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
                                    idX*m_gridInterval, idY*m_gridInterval,
                                    m_gridInterval, m_gridInterval);
             }
-        }
-    }
-    //Desenha Entidades
-    if(g_ShowEntities) {
-        for(int i = 0; i < entityHolder.size(); ++i) {
-            int idX = entityHolder[i].mGfx % m_tilesetLen;
-            int idY = entityHolder[i].mGfx / m_tilesetLen;
-            painter->drawImage(entityHolder[i].mPos.x()*m_gridInterval, entityHolder[i].mPos.y()*m_gridInterval,
-                               *m_tileset,
-                               idX*m_gridInterval, idY*m_gridInterval,
-                               m_gridInterval, m_gridInterval);
         }
     }
 
@@ -157,6 +175,24 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
 
 
 
+}
+
+void MapView::wheelEvent(QWheelEvent *event)
+{   //From: http://www.qtcentre.org/wiki/index.php?title=QGraphicsView:_Smooth_Panning_and_Zooming
+    setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+
+    // Scale the view / do the zoom
+    double scaleFactor = 1.15;
+    if(event->delta() > 0) {
+        // Zoom in
+        scale(scaleFactor, scaleFactor);
+    } else {
+        // Zooming out
+        scale(1.0 / scaleFactor, 1.0 / scaleFactor);
+    }
+
+    // Don't call superclass handler here
+    // as wheel is normally used for moving scrollbars
 }
 
 /*
@@ -248,10 +284,21 @@ void MapView::paintTooglePath()
         type = TYPE_BLOCK;
 }
 
-
 void MapView::mouseReleaseEvent(QMouseEvent *)
 {
     isMouseHold = false;
+}
+
+void MapView::mouseDoubleClickEvent(QMouseEvent *)
+{
+    if(g_cursorTool && g_editMode) {
+        EntityAddDialog edit(this);
+        if(m_selectedEntityHolderIndex < 0)
+            return;
+
+        edit.setEntity(entityHolder[m_selectedEntityHolderIndex]);
+        edit.exec();
+    }
 }
 //---------------- Mouse Press --------------------//
 void MapView::mousePressEvent(QMouseEvent *event)
@@ -337,24 +384,28 @@ void MapView::editModeMousePress(QMouseEvent *event)
         selection->setPos( destination*16 );
         selection->setRect(0,0,m_gridInterval, m_gridInterval);
         this->scene->update(this->viewport()->rect());
-        setSelectedEntityIndex();
-        qDebug() << m_selectedEntityIndex;
+        if(g_cursorTool)
+            setSelectedEntityIndexFromClick();
+        else
+            addEntity(selection->pos().toPoint(),m_selectedEntityListIndex);
+
+        qDebug() << m_selectedEntityHolderIndex;
     } else {
         emit(statusTipUpdated(""));
     }
 
 }
 
-void MapView::setSelectedEntityIndex()
+void MapView::setSelectedEntityIndexFromClick()
 {
     for(int i = 0; i < entityHolder.size();++i) {
         if( qFloor(selection->x()/m_gridInterval) == entityHolder[i].mPos.x() &&
                 qFloor(selection->y()/m_gridInterval) == entityHolder[i].mPos.y() ) {
-            m_selectedEntityIndex = i;
+            m_selectedEntityHolderIndex = i;
             return;
         }
     }
-    m_selectedEntityIndex = -1;
+    m_selectedEntityHolderIndex = -1;
 }
 
 /*
@@ -378,10 +429,12 @@ void MapView::paintMap(int mouseX, int mouseY)
     emit(mapChange());
 
     if(g_startTool) {
-        mapHolder[pX][pY].type = TYPE_START;
+        if(mapHolder[pX][pY].type == TYPE_START) mapHolder[pX][pY].type = TYPE_PASS;
+        else mapHolder[pX][pY].type = TYPE_START;
         return;
     } else if(g_endTool) {
-        mapHolder[pX][pY].type = TYPE_END;
+        if(mapHolder[pX][pY].type == TYPE_END) mapHolder[pX][pY].type = TYPE_PASS;
+        else mapHolder[pX][pY].type = TYPE_END;
         return;
     }
 
@@ -433,6 +486,37 @@ void MapView::paintArea(int mouseX, int mouseY, int width, int height)
 }
 
 
+bool MapView::isValidEntityPos(QPoint pos)
+{
+    //valid pos?
+    for(int i = 0; i < entityHolder.size();++i) {
+        if(entityHolder[i].mPos == pos){
+            qDebug() << "Posição da entidade inválida.";
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool MapView::isValidEntityAbsPos(QPoint absPos)
+{
+    QPoint pos(qFloor(absPos.x()/m_gridInterval),qFloor(absPos.y()/m_gridInterval));
+    return isValidEntityPos(pos);
+}
+
+void MapView::addEntity(QPoint absPos, int index)
+{
+    if(index < 0 || index >= g_entitylist.size()) return;
+
+    if( isValidEntityAbsPos(absPos) == false ) return;
+
+    QPoint pos(qFloor(absPos.x()/m_gridInterval),qFloor(absPos.y()/m_gridInterval));
+
+    g_entitylist[index].mPos = pos;
+    entityHolder.push_back(g_entitylist[index]);
+}
+
 void MapView::createMap(const QSize mapSize)
 {
     for(int i = 0; i < mapHolder.size();++i)
@@ -474,12 +558,102 @@ void MapView::setToolSelection(int tool, bool isOn)
 
 }
 
+QPoint MapView::getPosFromGfx(int gfx, const int tilesetLen)
+{
+    return QPoint(qFloor(gfx % tilesetLen), qFloor(gfx / tilesetLen));
+}
+
+void MapView::setTile(int x, int y, int tileGfx, int tileType)
+{
+    if(mapHolder.empty()) return;
+    if( x < 0 || x >= mapHolder.size()) return;
+    if( y < 0 || y >= mapHolder[0].size()) return;
+
+    if(tileGfx >= 0)
+        mapHolder[x][y].gfx = tileGfx;
+    if(tileType >= 0 )
+        mapHolder[x][y].type = tileType;
+}
+
+Tile* MapView::getTile(int x, int y)
+{
+    if(isValidMapPosition(QPoint(x,y)) == false) return NULL;
+
+    return &mapHolder[x][y];
+}
+
+void MapView::setEntity(int x, int y, Entity ent)
+{
+    // Verifica se a posição ficará dentro do mapa
+    if(mapHolder.empty()) return;
+    if( x < 0 || x >= mapHolder.size()) return;
+    if( y < 0 || y >= mapHolder[0].size()) return;
+
+    if(isValidEntityPos(QPoint(x,y)) == false) return;
+
+
+    ent.mPos.setX(x);
+    ent.mPos.setY(y);
+
+    entityHolder.push_back(ent);
+}
+
+void MapView::setOverrideEntity(int x, int y, Entity ent)
+{
+    // Verifica se a posição ficará dentro do mapa
+    if(mapHolder.empty()) return;
+    if( x < 0 || x >= mapHolder.size()) return;
+    if( y < 0 || y >= mapHolder[0].size()) return;
+
+    QPoint pos(x,y);
+
+    ent.mPos.setX(x);
+    ent.mPos.setY(y);
+
+    for(int i = 0; i < entityHolder.size();++i) {
+        if(entityHolder[i].mPos == pos){
+            entityHolder.remove(i);
+            break;
+        }
+    }
+
+    entityHolder.push_back(ent);
+}
+
+int MapView::getMapHeight()
+{
+    if(mapHolder.empty()) return 0;
+    return mapHolder[0].size();
+}
+
+int MapView::getMapWidth()
+{
+    return mapHolder.size();
+}
+
+void MapView::forceUpdateMap()
+{
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+MapView::MapView()
+{
+    //For Luabind
+}
+
 void MapView::newMap(const QSize mapSize)
 {
     scene->setSceneRect(QRectF(0,0,mapSize.width()*m_gridInterval, mapSize.height()*m_gridInterval));
     this->setEnabled(true);
     emit(mapChange());
+    entityHolder.clear();
     createMap(mapSize);
+}
+
+void MapView::newMapInt(int w, int h)
+{
+    newMap(QSize(w,h));
 }
 
 void MapView::load(const QString& filename)
@@ -531,10 +705,10 @@ void MapView::load(const QString& filename)
     //Player::PlayerControl->setPosition(player_x, player_y);
 
     myfile.ignore(20,'\n');
-    /*
+
     std::string str;
 
-    int px, py, hp, mp, atk, def, range, speed,sprIdx, sprIdy, buff;
+    int px, py, hp, mp, atk, def, range, speed,sprIdx, sprIdy, buff, gfx;
     while (myfile.eof() == false) //Le a linha
     {
         myfile >> str;
@@ -550,16 +724,14 @@ void MapView::load(const QString& filename)
             myfile >> sprIdx; myfile.ignore(3,',');
             myfile >> sprIdy; myfile.ignore(1,',');
 
-            Entity* ent = new Entity();
-            ent->setPosition(px,py);
-            ent->mHP = hp;
-            ent->mAtk = atk;
-            ent->mDef = def;
-            ent->mRange = range;
-            ent->mSpeedCost = speed;
-            ent->changeSprite(sprIdx, sprIdy);
+            gfx = sprIdx + sprIdy*qFloor(m_charset->width()/m_gridInterval);
 
-            ent->addToObjectList();
+            Entity ent;
+            ent.setEnemy(gfx,hp,atk,def,range,speed,mp);
+            ent.mPos.setX(px);
+            ent.mPos.setY(py);
+
+            entityHolder.push_back(ent);
 
         }else
         if(strcmp(str.c_str(), "Gold:") == 0)
@@ -568,7 +740,12 @@ void MapView::load(const QString& filename)
             myfile >> py; myfile.ignore(3,',');
             myfile >> hp; myfile.ignore(1,',');
 
-            ResourceManager::ResourceControl.addGold(px,py,hp);
+            Entity ent;
+            ent.setGold(hp);
+            ent.mPos.setX(px);
+            ent.mPos.setY(py);
+
+            entityHolder.push_back(ent);
         } else
         if(strcmp(str.c_str(), "Item:") == 0)
         {
@@ -582,18 +759,19 @@ void MapView::load(const QString& filename)
             myfile >> sprIdx; myfile.ignore(3,',');
             myfile >> sprIdy; myfile.ignore(1,',');
 
-            Item* item = new Item();
-            item->setPosition(px,py);
-            item->mIsBuff = buff;
-            item->mHp = hp;
-            item->mMp = mp;
-            item->mAtk = atk;
-            item->mDef = def;
-            item->changeSprite(sprIdx, sprIdy);
-            item->addToObjectList();
+            gfx = sprIdx + sprIdy*qFloor(m_itemset->width()/m_gridInterval);
+
+            Entity ent;
+
+            ent.setItem(gfx, hp, mp, atk, def, speed);
+            ent.mIsBuff = buff;
+            ent.mPos.setX(px);
+            ent.mPos.setY(py);
+
+            entityHolder.push_back(ent);
         }
     }// Fim do arquivo
-    */
+
     myfile.close();
 }
 
@@ -616,8 +794,28 @@ void MapView::toogleShowGrid()
     this->scene->update(this->viewport()->rect());
 }
 
+void MapView::toogleShowItem()
+{
+    g_ShowItens = !g_ShowItens;
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+void MapView::toogleShowEnemy()
+{
+    g_showChars = !g_showChars;
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+void MapView::entityListSelectionChanged(int index)
+{
+    m_selectedEntityListIndex = index;
+}
+
 bool MapView::isValidMapPosition(QPoint pos)
 {
+    if(mapHolder.empty()) return false;
     if(pos.x() < 0 || pos.y() < 0  ) return false;
     if(pos.x() >= mapHolder.size() ) return false;
     if(pos.y() >= mapHolder[0].size() ) return false;

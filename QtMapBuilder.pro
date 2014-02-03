@@ -18,7 +18,11 @@ SOURCES += main.cpp\
     mapview.cpp \
     entityadddialog.cpp \
     entity.cpp \
-    globals.cpp
+    globals.cpp \
+    scriptselectorwidget.cpp \
+    luamanager.cpp \
+    resourcemanager.cpp \
+    scriptmainwindow.cpp
 
 HEADERS  += mainwindow.h \
     tileseteditor.h \
@@ -26,7 +30,11 @@ HEADERS  += mainwindow.h \
     defines.h \
     entityadddialog.h \
     entity.h \
-    globals.h
+    globals.h \
+    scriptselectorwidget.h \
+    luamanager.h \
+    resourcemanager.h \
+    scriptmainwindow.h
 
 FORMS    += mainwindow.ui \
     tileseteditor.ui \
@@ -34,3 +42,18 @@ FORMS    += mainwindow.ui \
 
 RESOURCES += \
     QtMapBuilder.qrc
+
+unix|win32: LIBS += -LC:\Library\Lua\lua-5.1.4\lib -llua514
+
+INCLUDEPATH += C:\Library\Lua\lua-5.1.4\include
+DEPENDPATH += C:\Library\Lua\lua-5.1.4\include
+
+QMAKE_CXXFLAGS += -isystem C:\Library\Lua\boost_1_45_0
+INCLUDEPATH += -isystem C:\Library\Lua\boost_1_45_0
+DEPENDPATH += C:\Library\Lua\boost_1_45_0
+
+win32: LIBS += -LC:\Library\Lua\luabind-0.9.1\stage -lLuabind-Static
+
+QMAKE_CXXFLAGS += -isystem C:\Library\Lua\luabind-0.9.1
+INCLUDEPATH += -isystem C:\Library\Lua\luabind-0.9.1
+DEPENDPATH += C:\Library\Lua\luabind-0.9.1

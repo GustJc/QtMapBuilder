@@ -13,6 +13,7 @@ class QTreeWidget;
 class QTreeWidgetItem;
 #include <QVector>
 #include "entity.h"
+class ScriptSelectorWidget;
 namespace Ui {
 class MainWindow;
 }
@@ -30,6 +31,9 @@ public:
     QDockWidget* tilesetDock;
     TilesetEditor* tilesetEditor;
     QTreeWidget* entitySelector;
+    ScriptSelectorWidget* scriptSelector;
+signals:
+    void entityListSelectionChange(int index);
 
 private slots:
     void newFile();
@@ -40,6 +44,7 @@ private slots:
     void mapWasModified();
     void updateStatusBar(const QString &text );
     void entityItemChanged();
+    void entityItemDoubleClicked(QTreeWidgetItem* item , int);
 
     void tooglePaintTool(bool isChecked);
     void toogleCursorTool(bool isChecked);
@@ -47,6 +52,8 @@ private slots:
     void toogleEndTool(bool isChecked);
     void toogleRectangleTool(bool isChecked);
     void toogleEditMode(bool isChecked);
+
+    void runMapScript(QString filename);
 protected:
     void closeEvent(QCloseEvent *event);
 
@@ -85,6 +92,8 @@ private:
     QAction *editModeAction;
     QAction *showPathAction;
     QAction *showGridAction;
+    QAction *showEnemyAction;
+    QAction *showItemAction;
     //Menu
     QAction *newAction;
     QAction *openAction;

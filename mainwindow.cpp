@@ -4,10 +4,13 @@
 #include <QtGui>
 #include "tileseteditor.h"
 #include "mapview.h"
+#include "scriptselectorwidget.h"
 #include "globals.h"
+#include "entityadddialog.h"
 #include <QDebug>
 #include <QTreeWidgetItem>
 
+#include "luamanager.h"
 void MainWindow::connectObjects()
 {
     QObject::connect(tilesetEditor, SIGNAL(statusTipUpdated(const QString &)),
@@ -24,6 +27,14 @@ void MainWindow::connectObjects()
 
     QObject::connect(entitySelector, SIGNAL(itemSelectionChanged()), this,
                               SLOT(entityItemChanged()));
+    QObject::connect(entitySelector, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this,
+                              SLOT(entityItemDoubleClicked(QTreeWidgetItem*,int)));
+
+    QObject::connect(this, SIGNAL(entityListSelectionChange(int)), mapView,
+                     SLOT(entityListSelectionChanged(int)));
+
+    QObject::connect(scriptSelector, SIGNAL(runScriptClicked(QString)), this,
+                     SLOT(runMapScript(QString)));
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -51,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     addDockWidget(Qt::LeftDockWidgetArea, tilesetDock);
 
-    mapView = new MapView(tilesetImage,this);
+    mapView = new MapView(tilesetImage, enemyImage, itemImage,this);
     setCentralWidget(mapView);
 
     createActions();
@@ -83,7 +94,20 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connectObjects();
 
+//    QMap<QString,QString> mMap;
+//    mMap.insert("key", "gust");
+//    mMap.insert("my","name");
 
+//    QString str = mMap.find("my").value();
+//    qDebug() << str;
+//    str = mMap.find("key").value();
+//    qDebug() << str;
+//    if (mMap.find("a") == mMap.end())
+//        qDebug() << "END";
+
+
+
+      LuaManager::LuaControl.startLua(mapView);
 
 }
 
@@ -226,6 +250,22 @@ void MainWindow::createActions()
     connect(showGridAction, SIGNAL(triggered()), mapView,
             SLOT(toogleShowGrid()) );
 
+    showEnemyAction = new QAction(QIcon(":/images/enemy.png"),tr("Mostrar inimigos"),this);
+    showEnemyAction->setStatusTip(tr("Mostra inimigos no mapa"));
+    showEnemyAction->setShortcut(tr("CTRL+E"));
+    showEnemyAction->setCheckable(true);
+    showEnemyAction->setChecked(true);
+    connect(showEnemyAction, SIGNAL(triggered()), mapView,
+            SLOT(toogleShowEnemy()) );
+
+    showItemAction = new QAction(QIcon(":/images/item.png"),tr("Mostrar itens"),this);
+    showItemAction->setStatusTip(tr("Mostra itens no mapa"));
+    showItemAction->setShortcut(tr("CTRL+I"));
+    showItemAction->setCheckable(true);
+    showItemAction->setChecked(true);
+    connect(showItemAction, SIGNAL(triggered()), mapView,
+            SLOT(toogleShowItem()) );
+
     //Tools
     paintToolAction = new QAction(QIcon(":/images/paint.png"),tr("Pincel"),this);
     paintToolAction->setStatusTip(tr("Pinta quadrados"));
@@ -317,6 +357,15 @@ void MainWindow::createToolBars()
     editToolBar->addSeparator();
 
     editToolBar->addAction(showGridAction);
+    editToolBar->addAction(showEnemyAction);
+    editToolBar->addAction(showItemAction);
+
+    scriptSelector = new ScriptSelectorWidget(this);
+    editToolBar->addSeparator();
+    editToolBar->addSeparator();
+    editToolBar->addWidget(scriptSelector);
+    editToolBar->addSeparator();
+    editToolBar->addSeparator();
 }
 
 void MainWindow::createStatusBar()
@@ -369,6 +418,22 @@ void MainWindow::entityItemChanged()
     qDebug() << item->text(0);
     qDebug() << item->text(1);
     qDebug() << entitySelector->currentIndex().row();
+    emit(entityListSelectionChange(item->text(2).toInt()));
+}
+
+void MainWindow::entityItemDoubleClicked(QTreeWidgetItem *item, int )
+{
+    qDebug() << item->text(0);
+    qDebug() << item->text(1);
+    int index = item->text(2).toInt();
+
+    EntityAddDialog edit(this);
+    if(index < 0 || index >= g_entitylist.size())
+        return;
+
+    edit.setEntity(g_entitylist[index]);
+    edit.exec();
+
 }
 
 void MainWindow::tooglePaintTool(bool isChecked)
@@ -435,6 +500,14 @@ void MainWindow::toogleEditMode(bool isChecked)
     }
 }
 
+void MainWindow::runMapScript(QString filename)
+{
+    qDebug() << "Script: " << filename;
+    //LuaManager::LuaControl.executeTests();
+    if(filename.isEmpty() == false)
+        LuaManager::LuaControl.doFile(filename);
+}
+
 void MainWindow::toogleStartTool(bool isChecked)
 {
     if(isChecked) {
@@ -491,6 +564,7 @@ void MainWindow::populateTreeList()
     for(int i = 0; i < g_entitylist.size(); ++i) {
         QTreeWidgetItem* item = new QTreeWidgetItem(entitySelector);
         item->setText(0, g_entitylist.at(i).mName);
+        item->setText(2, QString::number(i));
         switch(g_entitylist.at(i).typeId()) {
         case ENTITY_ENEMY:
             item->setText(1, tr("Inimigo"));
@@ -572,6 +646,8 @@ void MainWindow::updateActionsStates()
     startToolAction->setChecked(g_startTool);
     showPathAction->setChecked(g_showPath);
     showGridAction->setChecked(g_showGrid);
+    showEnemyAction->setChecked(g_showChars);
+    showItemAction->setChecked(g_ShowItens);
     editModeAction->setChecked(g_editMode);
 
 //  g_ShowEntities;
