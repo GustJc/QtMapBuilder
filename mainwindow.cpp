@@ -7,6 +7,7 @@
 #include "scriptselectorwidget.h"
 #include "globals.h"
 #include "entityadddialog.h"
+#include "scriptmainwindow.h"
 #include <QDebug>
 #include <QTreeWidgetItem>
 
@@ -106,8 +107,8 @@ MainWindow::MainWindow(QWidget *parent) :
 //        qDebug() << "END";
 
 
-
-      LuaManager::LuaControl.startLua(mapView);
+    scriptWindow = new ScriptMainWindow(this);
+    LuaManager::LuaControl.startLua(mapView);
 
 }
 
@@ -504,6 +505,11 @@ void MainWindow::runMapScript(QString filename)
 {
     qDebug() << "Script: " << filename;
     //LuaManager::LuaControl.executeTests();
+
+    scriptWindow->show();
+    scriptWindow->setFocus();
+    scriptWindow->openFile(filename);
+
     if(filename.isEmpty() == false)
         LuaManager::LuaControl.doFile(filename);
 }

@@ -152,24 +152,40 @@ luabind::scope LuaManager::bindClasses()
     ;
 }
 
-void LuaManager::ReportLuaError(lua_State *luaState)
+QStringList LuaManager::ReportLuaError(lua_State *luaState)
 {
     const char* msg = lua_tostring(luaState,-1);
-
+    QStringList strList;
     while(msg)
     {
         lua_pop(luaState,1);
         std::cout << msg << std::endl;
         qDebug() << msg;
+        strList << msg;
         msg = lua_tostring(L,-1);
     }
+
+    return strList;
 }
 
-void LuaManager::doFile(QString filename)
+QStringList LuaManager::doFile(QString filename)
 {
+    QStringList strList;
     if( luaL_dofile(L, filename.toStdString().c_str()) ) {
-        ReportLuaError(L);
+        strList = ReportLuaError(L);
     }
+
+    return strList;
+}
+
+QStringList LuaManager::loadFile(QString filename)
+{
+    QStringList strList;
+    if( luaL_loadfile(L, filename.toStdString().c_str()) ) {
+         strList = ReportLuaError(L);
+    }
+
+    return strList;
 }
 
 void LuaManager::forceMapUpdate()

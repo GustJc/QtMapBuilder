@@ -11,6 +11,7 @@ class MapView;
 class QGraphicsView;
 class QTreeWidget;
 class QTreeWidgetItem;
+class ScriptMainWindow;
 #include <QVector>
 #include "entity.h"
 class ScriptSelectorWidget;
@@ -62,6 +63,7 @@ protected:
     QImage* itemImage;
 
     MapView* mapView;
+    ScriptMainWindow* scriptWindow;
 
 private:
     void populateTreeList();

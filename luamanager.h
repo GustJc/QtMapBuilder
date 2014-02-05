@@ -16,9 +16,10 @@ public:
     void startLua(MapView *mapview);
 
     void executeTests();
-    void ReportLuaError(lua_State* luaState);
+    QStringList ReportLuaError(lua_State* luaState);
 
-    void doFile(QString filename);
+    QStringList doFile(QString filename);
+    QStringList loadFile(QString filename);
 
     void forceMapUpdate();
 protected:
