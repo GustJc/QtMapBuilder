@@ -248,6 +248,8 @@ void MainWindow::createActions()
     showPathAction->setCheckable(true);
     connect(showPathAction, SIGNAL(triggered()), mapView,
             SLOT(toogleShowPath()) );
+    connect(showPathAction, SIGNAL(triggered()), tilesetEditor,
+            SLOT(forceUpdate()));
 
     showGridAction = new QAction(QIcon(":/images/grid.png"),tr("Mostrar quadrados"),this);
     showGridAction->setStatusTip(tr("Mostra divisão entre os blocos"));

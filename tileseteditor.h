@@ -17,13 +17,17 @@ protected:
     void mousePressEvent( QMouseEvent * event );
     bool eventFilter(QObject *dist, QEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *mouseEvent);
+
+
+    void drawForeground(QPainter* painter, const QRectF &);
 
 signals:
     void statusTipUpdated(const QString &text);
     void targetTileChange(int startIndex, int endIndex);
 
 public slots:
+    void forceUpdate();
 
 private:
     QImage* m_tileset;
@@ -36,7 +40,10 @@ private:
     QPoint clickStart;
     QPoint clickEnd;
 
-    bool scrollClick;
+    bool scrollClick; // To fix scroll event
+
+    bool pathId;
+    void paintTooglePath();
 };
 
 #endif // TILESETEDITOR_H

@@ -67,6 +67,8 @@ private:
     int startId;
     int endId;
     int entityId;
+    bool hasCopyTile;
+    Tile copyTile;
     bool pathId;
     bool isMouseHold;
 

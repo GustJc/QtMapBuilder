@@ -48,6 +48,8 @@ MapView::MapView(QImage *image, QImage *character, QImage *itens, QWidget *paren
 
     g_isClickActive = false;
 
+    hasCopyTile = false;
+
     m_selectedEntityHolderIndex = m_selectedEntityListIndex = -1;
 
 }
@@ -70,12 +72,10 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
     for(int x = 0; x < mapHolder.size(); ++x) {
         for(int y = 0; y < mapHolder[x].size(); ++y) {
                         // Desenha mapa
-            if(mapHolder[x][y].gfx < 0)
-                continue;
             if(mapHolder[x][y].type < 0)
                 continue;
 
-            /**** REMOVER quando alterar no engine para gravar com -1 ***/
+            /**** REMOVER quando alterar no engine para gravar com -1 ***
             if(mapHolder[x][y].type <= 0) {
                 if(g_showPath){
                     painter->setBrush(QBrush(Qt::red));
@@ -85,13 +85,14 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
                 }
                 continue;
             }
-            /*** FIM ****/
-
-            int idX = mapHolder[x][y].gfx % m_tilesetLen;
-            int idY = qFloor(mapHolder[x][y].gfx / m_tilesetLen);
-            painter->drawImage(x*m_gridInterval, y*m_gridInterval, *m_tileset,
-                               idX*m_gridInterval, idY*m_gridInterval,
-                               m_gridInterval, m_gridInterval);
+            *** FIM ****/
+            if(mapHolder[x][y].gfx >= 0) {
+                int idX = mapHolder[x][y].gfx % m_tilesetLen;
+                int idY = qFloor(mapHolder[x][y].gfx / m_tilesetLen);
+                painter->drawImage(x*m_gridInterval, y*m_gridInterval, *m_tileset,
+                                   idX*m_gridInterval, idY*m_gridInterval,
+                                   m_gridInterval, m_gridInterval);
+            }
             // Desenha Path
             if(g_showPath) {
                 if(mapHolder[x][y].type == TYPE_BLOCK || mapHolder[x][y].type < 0 )
@@ -266,6 +267,7 @@ void MapView::mouseMoveEvent(QMouseEvent *event)
 
 void MapView::paintTooglePath()
 {
+    hasCopyTile = false;
     int pX = qFloor(selection->x()/m_gridInterval);
     int pY = qFloor(selection->y()/m_gridInterval);
 
@@ -273,11 +275,6 @@ void MapView::paintTooglePath()
 
     int& type = mapHolder[pX][pY].type;
 
-//    if(type == TYPE_BLOCK || type < 0 ) {
-//        type = TYPE_PASS;
-//    } else {
-//        type = TYPE_BLOCK;
-//    }
     if(pathId)
         type = TYPE_PASS;
     else
@@ -334,6 +331,8 @@ void MapView::mousePressEvent(QMouseEvent *event)
         isMouseHold = true;
     }
 
+    //TODO, ajustar tamanho para 1 tile ao clicar, trocar para normal ao perder hasCopyTIle
+    //TODO, Permitir copia em área ao arrastar com botão direito segurado.
     if(event->button() == Qt::RightButton) {
         if(g_rectangleTool) {
             g_isClickActive = false;
@@ -341,7 +340,11 @@ void MapView::mousePressEvent(QMouseEvent *event)
             int pX = qFloor(mouse.x() / m_gridInterval);
             int pY = qFloor(mouse.y() / m_gridInterval);
 
-            startId = endId = mapHolder[pX][pY].gfx;
+            hasCopyTile = true;
+            copyTile    = mapHolder[pX][pY];
+            if(copyTile.type == TYPE_START){
+                copyTile.type = TYPE_PASS;
+            }
         }
     }
 
@@ -429,11 +432,21 @@ void MapView::paintMap(int mouseX, int mouseY)
     emit(mapChange());
 
     if(g_startTool) {
+        if(isMouseHold) return;
         qDebug() << "StartTool Active";
         if(mapHolder[pX][pY].type == TYPE_START) mapHolder[pX][pY].type = TYPE_PASS;
-        else mapHolder[pX][pY].type = TYPE_START;
+        else {
+            QPoint startpoint = getPlayerPosition();
+            //Se houver um ponto de inicio, troca
+            if(startpoint.x() >= 0 || startpoint.y() >= 0){
+                mapHolder[startpoint.x()][startpoint.y()].type = TYPE_PASS;
+            }
+
+            mapHolder[pX][pY].type = TYPE_START;
+        }
         return;
     } else if(g_endTool) {
+        if(isMouseHold) return;
         qDebug() << "EndTool Active";
         if(mapHolder[pX][pY].type == TYPE_END) mapHolder[pX][pY].type = TYPE_PASS;
         else mapHolder[pX][pY].type = TYPE_END;
@@ -441,9 +454,12 @@ void MapView::paintMap(int mouseX, int mouseY)
     }
 
     qDebug() << "startId: " << startId << "endId: " << endId;
-
+    if(hasCopyTile) {
+        mapHolder[pX][pY] = copyTile;
+    } else
     if(endId == startId || endId < 0) {
         mapHolder[pX][pY].gfx = startId;
+        mapHolder[pX][pY].type = g_tilesetMapTypeInfo[(startId   % m_tilesetLen)][qFloor(startId   / m_tilesetLen)];
     } else {
 
         int diffX = (endId   % m_tilesetLen) - (startId % m_tilesetLen );
@@ -457,7 +473,8 @@ void MapView::paintMap(int mouseX, int mouseY)
                 if(pX+ix >= mapHolder.size()) continue;
                 if(pY+iy >= mapHolder[0].size()) break;
 
-                mapHolder[pX+ix][pY+iy].gfx = startId + ix + iy*m_tilesetLen;
+                mapHolder[pX+ix][pY+iy].gfx  = startId + ix + iy*m_tilesetLen;
+                mapHolder[pX+ix][pY+iy].type = g_tilesetMapTypeInfo[(startId   % m_tilesetLen)+ix][qFloor(startId   / m_tilesetLen)+iy];
             }
         }
 
@@ -467,6 +484,7 @@ void MapView::paintMap(int mouseX, int mouseY)
 
 void MapView::paintArea(int mouseX, int mouseY, int width, int height)
 {
+    hasCopyTile = false;
     int pX = qFloor(mouseX/m_gridInterval);
     int pY = qFloor(mouseY/m_gridInterval);
     int pW = qFloor(width/m_gridInterval);
@@ -659,6 +677,7 @@ void MapView::newMapInt(int w, int h)
 void MapView::toogleEditMode()
 {
     g_editMode = !g_editMode;
+    hasCopyTile = false;
 }
 
 void MapView::toogleShowPath()
@@ -666,6 +685,7 @@ void MapView::toogleShowPath()
     g_showPath = !g_showPath;
     repaint();
     this->scene->update(this->viewport()->rect());
+    hasCopyTile = false;
 }
 
 void MapView::toogleShowGrid()
@@ -708,6 +728,8 @@ void MapView::targetTileChanged(int startIndex, int endIndex)
 {
     this->startId = startIndex;
     this->endId   = endIndex;
+
+    hasCopyTile = false;
 }
 
 
@@ -841,7 +863,7 @@ QPoint MapView::getPlayerPosition()
             }
         }
     }
-    return QPoint(0,0);
+    return QPoint(-1,-1);
 }
 void MapView::save(const QString& filename)
 {
