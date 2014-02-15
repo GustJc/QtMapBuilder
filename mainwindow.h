@@ -46,6 +46,7 @@ private slots:
     void updateStatusBar(const QString &text );
     void entityItemChanged();
     void entityItemDoubleClicked(QTreeWidgetItem* item , int);
+    void addNewEntity();
 
     void tooglePaintTool(bool isChecked);
     void toogleCursorTool(bool isChecked);
@@ -67,6 +68,7 @@ protected:
 
 private:
     void populateTreeList();
+    void updateTreeListData();
     void connectObjects();
     void createActions();
     void createMenus();
@@ -74,7 +76,7 @@ private:
     void createStatusBar();
     void readSettings();
     bool maybeSave();
-    bool saveFile(const QString &fileName);
+    bool saveFile(const QString &filename);
     void writeSettings();
     void saveSettings();
     void setCurrentFile(const QString &fileName);
@@ -103,6 +105,9 @@ private:
     QAction *saveAsAction;
     QAction *exitAction;
     QAction *aboutAction;
+
+
+    QAction *newEntityAction;
     //Tool
     QAction *paintToolAction;
     QAction *rectangleToolAction;

@@ -19,7 +19,8 @@ public:
     void setToolSelection(int tool, bool isOn);
 
     QPoint getPosFromGfx(int gfx, const int tilesetLen);
-
+    //Compatibility
+    QPoint getPlayerPosition();
     //Map for Lua
     void newMapInt(int w, int h);
     void setTile(int x, int y, int tileGfx, int tileType);

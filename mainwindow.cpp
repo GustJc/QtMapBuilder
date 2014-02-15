@@ -10,7 +10,7 @@
 #include "scriptmainwindow.h"
 #include <QDebug>
 #include <QTreeWidgetItem>
-
+#include "entityadddialog.h"
 #include "luamanager.h"
 void MainWindow::connectObjects()
 {
@@ -198,6 +198,12 @@ void MainWindow::createActions()
     connect(newAction, SIGNAL(triggered()), this,
             SLOT(newFile()));
 
+    newEntityAction = new QAction(QIcon(":/images/new.png"), tr("&Nova entidade"),this);
+    newEntityAction->setStatusTip(tr("Cria uma nova entidade"));
+    connect(newEntityAction, SIGNAL(triggered()), this,
+            SLOT(addNewEntity()));
+
+
     openAction = new QAction(QIcon(":/images/open.png"), tr("Abrir &mapa"),this);
     openAction->setShortcuts(QKeySequence::Open);
     openAction->setStatusTip(tr("Abre o mapa"));
@@ -318,6 +324,8 @@ void MainWindow::createMenus()
     fileMenu->addAction(saveAction);
     fileMenu->addAction(saveAsAction);
     fileMenu->addSeparator();
+    fileMenu->addAction(newEntityAction);
+    fileMenu->addSeparator();
     fileMenu->addAction(exitAction);
 
     editMenu = menuBar()->addMenu(tr("&Editar"));
@@ -394,11 +402,14 @@ bool MainWindow::maybeSave()
 {
     return true;
 }
-bool MainWindow::saveFile(const QString &fileName)
+bool MainWindow::saveFile(const QString &filename)
 {
     qDebug() << "saveFile";
-    if(fileName.isEmpty())
+    if(filename.isEmpty())
         return false;
+
+    mapView->save(filename);
+
     return true;
 }
 
@@ -435,6 +446,41 @@ void MainWindow::entityItemDoubleClicked(QTreeWidgetItem *item, int )
     edit.setEntity(g_entitylist[index]);
     edit.exec();
 
+}
+
+void MainWindow::addNewEntity()
+{
+    QStringList types;
+    types << "Inimigo" << "Dinheiro" << "Item";
+    bool isOK = false;
+    QString itemChoosen = QInputDialog::getItem(this,tr("Selecione o tipo de entidade"),"Selecione o tipo de entidade: ", types,
+                                                0, false, &isOK);
+    qDebug() << itemChoosen;
+
+    if( !isOK ) {
+        return;
+    }
+
+    Entity ent;
+
+    if(itemChoosen.contains("Inimigo")) {
+        ent.setEnemy(0,10,10,10,10,10);
+    } else if(itemChoosen.contains("Dinheiro")) {
+        ent.setGold(10);
+    } else if(itemChoosen.contains("Item")) {
+        ent.setItem(0, 10, 10, 10, 10, 10);
+    } else {
+        return;
+    }
+
+    EntityAddDialog edit(this);
+
+    edit.setEntity(ent);
+
+    if( edit.exec() == QDialog::Accepted ) {
+        g_entitylist.push_back(ent);
+        updateTreeListData();
+    }
 }
 
 void MainWindow::tooglePaintTool(bool isChecked)
@@ -522,6 +568,8 @@ void MainWindow::toogleStartTool(bool isChecked)
         g_rectangleTool     = false;
         g_paintTool         = true;
         updateActionsStates();
+    } else {
+        g_startTool         = false;
     }
 
     mapView->setToolSelection(START_TOOL, isChecked);
@@ -535,6 +583,8 @@ void MainWindow::toogleEndTool(bool isChecked)
         g_rectangleTool     = false;
         g_paintTool         = true;
         updateActionsStates();
+    } else {
+        g_endTool           = false;
     }
 
     mapView->setToolSelection(END_TOOL, isChecked);
@@ -556,6 +606,8 @@ void MainWindow::toogleCursorTool(bool isChecked)
 
 void MainWindow::populateTreeList()
 {
+    // Futuramente, extrair itens dos scripts .lua
+
     Entity ent;
     ent.setEnemy(2,100,50,20,4,100);
     ent.mName = "Gobler";
@@ -566,6 +618,15 @@ void MainWindow::populateTreeList()
 
     g_entitylist.push_back(ent);
     g_entitylist.push_back(ent2);
+
+
+    updateTreeListData();
+
+}
+
+void MainWindow::updateTreeListData()
+{
+    entitySelector->clear();
 
     for(int i = 0; i < g_entitylist.size(); ++i) {
         QTreeWidgetItem* item = new QTreeWidgetItem(entitySelector);
@@ -627,8 +688,6 @@ void MainWindow::populateTreeList()
 //                     "</div>"
 //                     "</html>");
     }
-
-
 }
 QString MainWindow::strippedName(const QString &fullFileName)
 {

@@ -10,20 +10,12 @@ TilesetEditor::TilesetEditor(QImage *image, QWidget *parent) :
 {
     m_tileset = image;
 
-    qDebug() << "Construido tilesetEditor";
-
     scene = new QGraphicsScene(QRectF(0,0,256,256));
     scene->addRect(scene->sceneRect(),QPen(Qt::black), QBrush(Qt::black));
-
-
 
     imageItem = scene->addPixmap(QPixmap::fromImage(*image));
 
     selection = scene->addRect(QRectF(0,0,0,0),QPen(Qt::red, 2));
-
-
-
-
 
     //QPalette Pal(palette());
     //Pal.setColor(QPalette::Background, Qt::darkGray);
@@ -40,6 +32,7 @@ TilesetEditor::TilesetEditor(QImage *image, QWidget *parent) :
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     scrollClick = false;
+
 
 }
 

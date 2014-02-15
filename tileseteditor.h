@@ -37,7 +37,6 @@ private:
     QPoint clickEnd;
 
     bool scrollClick;
-
 };
 
 #endif // TILESETEDITOR_H

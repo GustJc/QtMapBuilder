@@ -10,6 +10,8 @@ enum {
 class Entity
 {
 public:
+    //Campo nome não pode ser em branco
+    //Verificar atualização dos dados quando selecionado uma entidade
     Entity();
     void setTypeId(int type);
     int typeId() const;

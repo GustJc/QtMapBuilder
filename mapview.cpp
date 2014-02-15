@@ -429,10 +429,12 @@ void MapView::paintMap(int mouseX, int mouseY)
     emit(mapChange());
 
     if(g_startTool) {
+        qDebug() << "StartTool Active";
         if(mapHolder[pX][pY].type == TYPE_START) mapHolder[pX][pY].type = TYPE_PASS;
         else mapHolder[pX][pY].type = TYPE_START;
         return;
     } else if(g_endTool) {
+        qDebug() << "EndTool Active";
         if(mapHolder[pX][pY].type == TYPE_END) mapHolder[pX][pY].type = TYPE_PASS;
         else mapHolder[pX][pY].type = TYPE_END;
         return;
@@ -546,11 +548,9 @@ void MapView::setToolSelection(int tool, bool isOn)
     } else {
         if(tool == START_TOOL) {
             this->setCursor(QCursor(QPixmap(":/images/startCursor.png")));
-            //this->setCursor(Qt::UpArrowCursor);
         }
         if(tool == END_TOOL) {
             this->setCursor(QCursor(QPixmap(":/images/endCursor.png")));
-            //this->setCursor(Qt::UpArrowCursor);
         }
 
 
@@ -655,6 +655,62 @@ void MapView::newMapInt(int w, int h)
 {
     newMap(QSize(w,h));
 }
+
+void MapView::toogleEditMode()
+{
+    g_editMode = !g_editMode;
+}
+
+void MapView::toogleShowPath()
+{
+    g_showPath = !g_showPath;
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+void MapView::toogleShowGrid()
+{
+    g_showGrid = !g_showGrid;
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+void MapView::toogleShowItem()
+{
+    g_ShowItens = !g_ShowItens;
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+void MapView::toogleShowEnemy()
+{
+    g_showChars = !g_showChars;
+    repaint();
+    this->scene->update(this->viewport()->rect());
+}
+
+void MapView::entityListSelectionChanged(int index)
+{
+    m_selectedEntityListIndex = index;
+}
+
+bool MapView::isValidMapPosition(QPoint pos)
+{
+    if(mapHolder.empty()) return false;
+    if(pos.x() < 0 || pos.y() < 0  ) return false;
+    if(pos.x() >= mapHolder.size() ) return false;
+    if(pos.y() >= mapHolder[0].size() ) return false;
+
+    return true;
+}
+
+void MapView::targetTileChanged(int startIndex, int endIndex)
+{
+    this->startId = startIndex;
+    this->endId   = endIndex;
+}
+
+
 
 void MapView::load(const QString& filename)
 {
@@ -775,61 +831,77 @@ void MapView::load(const QString& filename)
     myfile.close();
 }
 
-void MapView::toogleEditMode()
+
+QPoint MapView::getPlayerPosition()
 {
-    g_editMode = !g_editMode;
+    for(int i = 0; i < mapHolder.size();++i) {
+        for(int j = 0; j < mapHolder[0].size(); ++j) {
+            if(mapHolder[i][j].type == TYPE_START) {
+                return QPoint(i,j);
+            }
+        }
+    }
+    return QPoint(0,0);
 }
-
-void MapView::toogleShowPath()
-{
-    g_showPath = !g_showPath;
-    repaint();
-    this->scene->update(this->viewport()->rect());
-}
-
-void MapView::toogleShowGrid()
-{
-    g_showGrid = !g_showGrid;
-    repaint();
-    this->scene->update(this->viewport()->rect());
-}
-
-void MapView::toogleShowItem()
-{
-    g_ShowItens = !g_ShowItens;
-    repaint();
-    this->scene->update(this->viewport()->rect());
-}
-
-void MapView::toogleShowEnemy()
-{
-    g_showChars = !g_showChars;
-    repaint();
-    this->scene->update(this->viewport()->rect());
-}
-
-void MapView::entityListSelectionChanged(int index)
-{
-    m_selectedEntityListIndex = index;
-}
-
-bool MapView::isValidMapPosition(QPoint pos)
-{
-    if(mapHolder.empty()) return false;
-    if(pos.x() < 0 || pos.y() < 0  ) return false;
-    if(pos.x() >= mapHolder.size() ) return false;
-    if(pos.y() >= mapHolder[0].size() ) return false;
-
-    return true;
-}
-
-void MapView::targetTileChanged(int startIndex, int endIndex)
-{
-    this->startId = startIndex;
-    this->endId   = endIndex;
-}
-
 void MapView::save(const QString& filename)
 {
-    QFile file(filename);
+    std::ofstream file;
+    std::string absFileName(filename.toStdString());
+    file.open( absFileName.c_str(),std::ios::out | std::ios::binary);
+
+    int map_width = getMapWidth();
+    int map_height = getMapHeight();
+    QPoint player_pos = getPlayerPosition();
+    file << player_pos.x() << "." << player_pos.y() << "\n";
+    file << map_width << "-" << map_height << "\n";
+
+    for (int y = 0; y < map_height; y++)
+    {
+        for (int x = 0; x < map_width; x++)
+        {
+
+            file << mapHolder[x][y].type << ":" << mapHolder[x][y].gfx;
+            file << " ";
+        }
+        file << "\n";
+    }
+    file << "\n";
+
+    //Salva inimigos e itens
+    /**
+    for(unsigned int i = 0; i < ObjectList.size(); ++i)
+    {
+        if(ObjectList[i]->type == TYPE_ENEMY)
+        {
+            file << "Enemy:\n";
+            Entity* ent = (Entity*)ObjectList[i];
+            file << ent->getPositionX() << ',' << ent->getPositionY() << ','
+                    << ent->mHP << ',' << ent->mAtk << ',' << ent->mDef << ','
+                    << ent->mRange << ',' << ent->mSpeedCost << ','
+                    << ent->getSpriteIdx() << ',' << ent->getSpriteIdy() << '\n';
+
+        }
+        else
+        if(ObjectList[i]->type == TYPE_ITEM)
+        {
+            Item* item = (Item*)ObjectList[i];
+            if(item->mGold != 0)
+            {
+                file << "Gold:\n";
+                file << item->getPositionX() << ',' << item->getPositionY() << ','
+                        << item->mGold << '\n';
+            }
+            else
+            {
+                file << "Item:\n";
+                file << item->getPositionX() << ',' << item->getPositionY() << ','
+                        << item->mIsBuff << ',' << item->mHp << ','
+                        << item->mMp << ',' << item->mAtk << ',' << item->mDef << ','
+                        << item->getSpriteIdx() << ',' << item->getSpriteIdy() << '\n';
+            }
+        } //Fim item
+    } //Fim for
+    **/
+    file << "\n";
+    file.close();
 }

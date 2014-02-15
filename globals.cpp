@@ -2,6 +2,7 @@
 
 QVector<Entity> g_entitylist;
 QMap<std::string, Entity>    g_entitymap;
+QVector<QVector<int> > g_tilesetMapTypeInfo;
 
 bool g_showPath;
 bool g_editMode;
