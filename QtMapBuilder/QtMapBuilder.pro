@@ -58,8 +58,8 @@ QMAKE_CXXFLAGS += -isystem C:\Library\Lua\luabind-0.9.1
 INCLUDEPATH += -isystem C:\Library\Lua\luabind-0.9.1
 DEPENDPATH += C:\Library\Lua\luabind-0.9.1
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../../Library/QScintilla-gpl-2.8/dist/lib/ -lqscintilla2
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../Library/QScintilla-gpl-2.8/dist/lib/ -lqscintilla2d
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../../../Library/QScintilla-gpl-2.8/dist/lib/ -lqscintilla2
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../../Library/QScintilla-gpl-2.8/dist/lib/ -lqscintilla2d
 
-INCLUDEPATH += $$PWD/../../../../../../../Library/QScintilla-gpl-2.8/dist/include
-DEPENDPATH += $$PWD/../../../../../../../Library/QScintilla-gpl-2.8/dist/include
+INCLUDEPATH += $$PWD/../../../../../../../../Library/QScintilla-gpl-2.8/dist/include
+DEPENDPATH += $$PWD/../../../../../../../../Library/QScintilla-gpl-2.8/dist/include
