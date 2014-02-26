@@ -47,19 +47,19 @@ void ScriptMainWindow::setCurrentFile(const QString filename)
 
 void ScriptMainWindow::initializeActions()
 {
-    executeScriptAction = new QAction(style()->standardIcon(QStyle::SP_ArrowRight), tr("&Executa script"),this);
+    executeScriptAction = new QAction(style()->standardIcon(QStyle::SP_ArrowRight), tr("&Executa script. (CTRL+R)"),this);
     executeScriptAction->setShortcut(tr("CTRL+R"));
     executeScriptAction->setStatusTip(tr("Executa script"));
     connect(executeScriptAction, SIGNAL(triggered()), this,
             SLOT(onExecuteScript()));
 
-    testScriptAction = new QAction(style()->standardIcon(QStyle::SP_BrowserReload), tr("&Testa script"),this);
-    testScriptAction->setShortcut(tr("CTRL+T"));
+    testScriptAction = new QAction(style()->standardIcon(QStyle::SP_BrowserReload), tr("&Testa script. (CTRL+E)"),this);
+    testScriptAction->setShortcut(tr("CTRL+E"));
     testScriptAction->setStatusTip(tr("Testa script, não o executa"));
     connect(testScriptAction, SIGNAL(triggered()), this,
             SLOT(onTestScript()));
 
-    saveAction = new QAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("&Salva script"),this);
+    saveAction = new QAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("&Salva script. (CTRL+S)"),this);
     saveAction->setShortcuts(QKeySequence::Save);
     saveAction->setStatusTip(tr("Salva script"));
     connect(saveAction, SIGNAL(triggered()), this,
@@ -227,6 +227,9 @@ void ScriptMainWindow::displayCodeErrors(const QStringList strList)
 
         int lineStartError = str.mid(lineIndex, (lineLastIndex-lineIndex)).toInt() -1;
         int lineEndError = str.mid(index,(lastIndex-index)).toInt() -1;
+
+        if(lineStartError < 0) lineStartError = 0;
+        if(lineEndError < 0) lineEndError = 1;
 
         editor->annotate(lineStartError, str.mid(lineLastIndex+2), 15);
         editor->annotate(lineEndError, str.mid(lastIndex+2), 15);

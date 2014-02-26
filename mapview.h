@@ -15,14 +15,14 @@ class MapView : public QGraphicsView
 public:
     explicit MapView(QImage* image, QImage* character, QImage* itens, QWidget *parent = 0);
 
-    void createMap(const QSize mapSize);
+    void createMap(const QSize mapSize, int defaultType, int defaultGfx);
     void setToolSelection(int tool, bool isOn);
 
     QPoint getPosFromGfx(int gfx, const int tilesetLen);
     //Compatibility
     QPoint getPlayerPosition();
     //Map for Lua
-    void newMapInt(int w, int h);
+    void newMapInt(int w, int h, int defaultType = 1, int defaultGfx = -1);
     void setTile(int x, int y, int tileGfx, int tileType);
     Tile *getTile(int x, int y);
     void setEntity(int x, int y, Entity ent);
@@ -47,7 +47,7 @@ signals:
     void statusTipUpdated(const QString &text);
 
 public slots:
-    void newMap(const QSize mapSize);
+    void newMap(const QSize mapSize, int defaultType = 1, int defaultGfx = -1);
     void targetTileChanged(int startIndex, int endIndex);
 
     void save(const QString &filename);

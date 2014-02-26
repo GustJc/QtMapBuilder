@@ -501,6 +501,7 @@ void MapView::paintArea(int mouseX, int mouseY, int width, int height)
         for(int y = pY; y < mapHolder[x].size() &&
                     y < pY+pH; ++y) {
             mapHolder[x][y].gfx = startId;
+            mapHolder[x][y].type = g_tilesetMapTypeInfo[(startId   % m_tilesetLen)][qFloor(startId   / m_tilesetLen)];
         }
     }
 }
@@ -537,7 +538,7 @@ void MapView::addEntity(QPoint absPos, int index)
     entityHolder.push_back(g_entitylist[index]);
 }
 
-void MapView::createMap(const QSize mapSize)
+void MapView::createMap(const QSize mapSize, int defaultType, int defaultGfx)
 {
     for(int i = 0; i < mapHolder.size();++i)
         mapHolder[i].clear();
@@ -551,8 +552,8 @@ void MapView::createMap(const QSize mapSize)
     for(int x = 0; x < mapSize.width(); ++x){
         for(int y = 0; y < mapSize.height(); ++y) {
             Tile t;
-            t.gfx   = TILE_NONE;
-            t.type = TYPE_PASS;
+            t.gfx   = defaultGfx;
+            t.type = defaultType;
             mapHolder[x][y] = t;
         }
     }
@@ -660,18 +661,18 @@ MapView::MapView()
     //For Luabind
 }
 
-void MapView::newMap(const QSize mapSize)
+void MapView::newMap(const QSize mapSize, int defaultType, int defaultGfx)
 {
     scene->setSceneRect(QRectF(0,0,mapSize.width()*m_gridInterval, mapSize.height()*m_gridInterval));
     this->setEnabled(true);
     emit(mapChange());
     entityHolder.clear();
-    createMap(mapSize);
+    createMap(mapSize, defaultType, defaultGfx);
 }
 
-void MapView::newMapInt(int w, int h)
+void MapView::newMapInt(int w, int h, int defaultType, int defaultGfx)
 {
-    newMap(QSize(w,h));
+    newMap(QSize(w,h), defaultType, defaultGfx);
 }
 
 void MapView::toogleEditMode()
