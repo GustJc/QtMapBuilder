@@ -43,7 +43,7 @@ FORMS    += mainwindow.ui \
 RESOURCES += \
     QtMapBuilder.qrc
 
-unix|win32: LIBS += -LC:\Library\Lua\lua-5.1.4\lib -llua514
+win32: LIBS += -LC:\Library\Lua\lua-5.1.4\lib -llua514
 
 INCLUDEPATH += C:\Library\Lua\lua-5.1.4\include
 DEPENDPATH += C:\Library\Lua\lua-5.1.4\include
@@ -63,3 +63,16 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../..
 
 INCLUDEPATH += $$PWD/../../../../../../../../Library/QScintilla-gpl-2.8/dist/include
 DEPENDPATH += $$PWD/../../../../../../../../Library/QScintilla-gpl-2.8/dist/include
+
+
+unix:!macx: LIBS += -L/usr/lib/x86_64-linux-gnu/ -llua5.1
+
+INCLUDEPATH += /usr/include/lua5.1
+DEPENDPATH += /usr/include/lua5.1
+
+unix:!macx: LIBS += -lluabind
+unix:!macx: LIBS += -L/opt/Qt5.2.1/5.2.1/gcc_64/lib/ -lqscintilla2
+
+INCLUDEPATH += /home/gust/Library/QScintilla-gpl-2.8/include
+DEPENDPATH += /home/gust/Library/QScintilla-gpl-2.8/include
+
