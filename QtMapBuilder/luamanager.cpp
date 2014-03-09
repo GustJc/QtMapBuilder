@@ -45,6 +45,9 @@ void LuaManager::startLua(MapView* mapview)
     luabind::globals(L)["map"] =
         mapView;
 
+    luabind::globals(L)["res"] =
+        &ResourceManager::ResourceControl;
+
     lua_pushcfunction(L, lua_sleep);
     lua_setglobal(L, "sleep");
 
@@ -145,7 +148,15 @@ luabind::scope LuaManager::bindClasses()
         .def( luabind::constructor<>( ) )
         .def( "createEntity", &ResourceManager::createEntity)
         .def( "getEntity", &ResourceManager::getEntity)
-        .def( "getEntityByIndex", &ResourceManager::getEntityByIndex),
+        .def( "getEntityByIndex", &ResourceManager::getEntityByIndex)
+            .def( "addGold", &ResourceManager::addGold)
+        .def( "addEntityByIndex", &ResourceManager::addEntityByIndex)
+        .def( "addItemByIndex", &ResourceManager::addItemByIndex)
+        .def( "addEntity", &ResourceManager::addEntity)
+        .def( "addItem", &ResourceManager::addItem)
+        .def( "addCustomEntity", &ResourceManager::addCustomEntity)
+        .def( "clearEntityMap", &ResourceManager::clearEntityMap),
+
 
     luabind::class_<std::string>("stdString")
         .def( luabind::constructor<>( ) )

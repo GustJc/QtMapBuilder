@@ -25,7 +25,7 @@ public:
     void newMapInt(int w, int h, int defaultType = 1, int defaultGfx = -1);
     void setTile(int x, int y, int tileGfx, int tileType);
     Tile *getTile(int x, int y);
-    void setEntity(int x, int y, Entity ent);
+    void setEntity(int x, int y, Entity& ent);
     void setOverrideEntity(int x, int y, Entity ent);
     int getMapHeight();
     int getMapWidth();

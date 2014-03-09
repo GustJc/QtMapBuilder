@@ -92,9 +92,39 @@ void ScriptMainWindow::initializeUI()
     split->setHandleWidth(10);
 
     QTreeWidgetItem* item = new QTreeWidgetItem(treeSelector);
-    item->setText(0, "createMap(int width, int height");
-                     item = new QTreeWidgetItem(treeSelector);
-    item->setText(0, "setTile(int gfx, int type)");
+    item->setText(0, "sleep(int milliseconds)");
+        item = new QTreeWidgetItem(treeSelector);
+
+    item->setText(0, "______________________________________________________________________");
+
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "map:createMap (int width, int height, int defaultType, int defaultGfx)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "map:setTile (int posX, int posY, int gfx, int tileType)");
+        item = new QTreeWidgetItem(treeSelector);
+
+    item->setText(0, "______________________________________________________________________");
+
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:clearEntityMap()");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:addGold(int px, int py, int gold)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:addEntityByIndex(int px, int py, int ID)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:addItemByIndex(int px, int py, int ID)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:addEntity(int px, int py, std::string name)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:addItem(int px, int py, std::string   name)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:addCustomEntity(int px, int py, Entity& ent)");
+        item = new QTreeWidgetItem(treeSelector);
+
+    item->setText(0, "______________________________________________________________________");
+
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "Tile.PASS, Tile.BLOCK, Tile.START, Tile.END");
 
     this->setCentralWidget(split);
     this->adjustSize();
@@ -170,8 +200,17 @@ void ScriptMainWindow::initializeLexer()
 //    apis->add("foobar //isCool");
 
     apis->add("sleep(int milliseconds) \nPausa o programa por X milisegundos");
-    apis->add("map:createMap (int width, int height) \nCria o mapa para ser desenhado.");
+    apis->add("map:createMap (int width, int height, int defaultType, int defaultGfx) \nCria o mapa para ser desenhado.");
     apis->add("map:setTile (int posX, int posY, int gfx, int tileType) \nMuda o gráfico e o tipo do tile escolhido.");
+
+    apis->add("res:clearEntityMap()\nLimpa lista de entidades.");
+    apis->add("res:addGold(int px, int py, int gold)\nAdiciona dinheiro ao mapa.");
+    apis->add("res:addEntityByIndex(int px, int py, int ID)\nAdiciona entidade pelo ID da lista ao mapa.");
+    apis->add("res:addItemByIndex(int px, int py, int ID)\ndiciona item pelo ID da lista ao mapa.");
+    apis->add("res:addEntity(int px, int py, std::string name)\nAdiciona entidade pelo nome ao mapa.");
+    apis->add("res:addItem(int px, int py, std::string   name)\nAdiciona item pelo nome ao mapa.");
+    apis->add("res:addCustomEntity(int px, int py, Entity& ent)\nAdiciona uma entidade customizada ao mapa.");
+
     apis->add("Tile.PASS Bloco passável.");
     apis->add("Tile.BLOCK Bloco não passável.");
     apis->add("Tile.START Início da fase, só deve haver um.");

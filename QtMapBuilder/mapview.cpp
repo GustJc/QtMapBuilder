@@ -2,6 +2,7 @@
 #include "defines.h"
 
 #include "entityadddialog.h"
+#include "resourcemanager.h"
 
 #include <QGraphicsScene>
 #include <QDebug>
@@ -23,6 +24,7 @@
 MapView::MapView(QImage *image, QImage *character, QImage *itens, QWidget *parent) :
     QGraphicsView(parent)
 {
+    ResourceManager::ResourceControl.map = this;
     m_tileset = image;
     m_charset = character;
     m_itemset = itens;
@@ -601,7 +603,7 @@ Tile* MapView::getTile(int x, int y)
     return &mapHolder[x][y];
 }
 
-void MapView::setEntity(int x, int y, Entity ent)
+void MapView::setEntity(int x, int y, Entity &ent)
 {
     // Verifica se a posição ficará dentro do mapa
     if(mapHolder.empty()) return;

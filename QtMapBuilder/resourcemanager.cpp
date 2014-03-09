@@ -1,5 +1,7 @@
 #include "resourcemanager.h"
 #include "globals.h"
+#include "mapview.h"
+ResourceManager ResourceManager::ResourceControl;
 ResourceManager::ResourceManager()
 {
 }
@@ -33,3 +35,70 @@ Entity *ResourceManager::getEntityByIndex(int index)
 
     return NULL;
 }
+
+void ResourceManager::clearEntityMap()
+{
+    g_entitymap.clear();
+}
+
+void ResourceManager::addGold(int px, int py, int gold)
+{
+    int goldSize = gold/5;
+    if(goldSize > 5) goldSize = 5;
+
+    if(goldSize != 0){
+        goldSize = gold/(5*goldSize);
+    }
+    if(goldSize > 5) {
+        goldSize = 5;
+    }
+
+    Entity item;
+    item.setGold(gold);
+    item.mGfx = goldSize;
+    map->setEntity(px, py, item);
+}
+
+void ResourceManager::addEntityByIndex(int px, int py, int ID)
+{
+    Entity* ent = getEntityByIndex(ID);
+
+    if( ent != NULL) {
+        map->setEntity(px, py, *ent);
+    }
+}
+
+void ResourceManager::addItemByIndex(int px, int py, int ID)
+{
+    Entity* ent = getEntityByIndex(ID);
+
+    if( ent != NULL) {
+        map->setEntity(px, py, *ent);
+    }
+}
+
+void ResourceManager::addEntity(int px, int py, std::string name)
+{
+    Entity* ent = getEntity(name);
+
+    if( ent != NULL) {
+        map->setEntity(px, py, *ent);
+    }
+}
+
+void ResourceManager::addItem(int px, int py, std::string name)
+{
+    Entity* ent = getEntity(name);
+
+    if( ent != NULL) {
+        map->setEntity(px, py, *ent);
+    }
+}
+
+void ResourceManager::addCustomEntity(int px, int py, Entity &ent)
+{
+    map->setEntity(px, py, ent);
+}
+
+
+
