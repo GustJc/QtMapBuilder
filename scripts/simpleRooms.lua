@@ -20,6 +20,8 @@ TILE_END = 4
 TILE_START = 2
 coolDebug = true
 
+createEntities = true
+
 Sala = {}
 Sala.__index = Sala
 
@@ -43,6 +45,49 @@ end
 
 map:createMap(map_w, map_h, Tile.BLOCK, 1)
 
+
+
+if createEntities then
+	res:clearEntityMap()
+	res:clearItemMap()
+	local ent = res:createEntity("Enemy 1")
+	ent:setEnemy(1,10,1,0,3,100,0)
+	
+	ent = res:createEntity("Enemy 2")
+	ent:setEnemy(2,100,2,1,3,100,0)
+	
+	ent = res:createEntity("Enemy 3")
+	ent:setEnemy(3,100,2,1,3,100,0)
+	
+	ent = res:createEntity("Enemy 4")
+	ent:setEnemy(4,100,2,1,3,100,0)
+	
+	ent = res:createEntity("Enemy 5")
+	ent:setEnemy(5,100,2,1,3,100,0)
+	
+	ent = res:createEntity("Enemy 6")
+	ent:setEnemy(6,100,2,1,3,100,0)
+		
+	local ent = res:createItem("Item 1")
+	ent:setItem(0, 3, 0, 0, 0, 0)
+	
+	ent = res:createItem("Item 2")
+	ent:setItem(1, 10, 0, 0, 0, 0)
+	
+	ent = res:createItem("Item 3")
+	ent:setItem(2, 0, 10, 0, 0, 0)
+	
+	ent = res:createItem("Item 4")
+	ent:setItem(3, 3, 0, 0, 0, 0)
+	
+	ent = res:createItem("Item 5")
+	ent:setItem(4, 3, 0, 0, 0, 0)
+	
+	ent = res:createItem("Item 6")
+	ent:setItem(5, 3, 0, 0, 0, 0)
+	
+end
+	
 mSalas = {}
 
 --Cria salas
@@ -88,6 +133,10 @@ for i = 1, #mSalas-1 do
 		if isChance(20.0) then
 			goldCreated = math.floor(math.random() * 100)
 			res:addGold(n_x, n_y, goldCreated)
+		elseif isChance(8.0) then
+			res:addEntityByIndex(n_x, n_y, math.random(0,5))
+		elseif isChance(40.0) then
+			res:addEntityByIndex(n_x, n_y, math.random(0,5))
 		end
 	end
 	if coolDebug then sleep(drawTime) end

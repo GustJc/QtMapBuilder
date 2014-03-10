@@ -108,6 +108,12 @@ void ScriptMainWindow::initializeUI()
         item = new QTreeWidgetItem(treeSelector);
     item->setText(0, "res:clearEntityMap()");
         item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:clearItemMap()");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:createEntity(string name)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "res:createItem(string name)");
+        item = new QTreeWidgetItem(treeSelector);
     item->setText(0, "res:addGold(int px, int py, int gold)");
         item = new QTreeWidgetItem(treeSelector);
     item->setText(0, "res:addEntityByIndex(int px, int py, int ID)");
@@ -125,6 +131,13 @@ void ScriptMainWindow::initializeUI()
 
         item = new QTreeWidgetItem(treeSelector);
     item->setText(0, "Tile.PASS, Tile.BLOCK, Tile.START, Tile.END");
+        item = new QTreeWidgetItem(treeSelector);
+
+    item->setText(0, "______________________________________________________________________");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "ent:setEnemy(int gfx, int hp, int atk, int def, int range, int speed, int mp)");
+        item = new QTreeWidgetItem(treeSelector);
+    item->setText(0, "ent:setItem(int gfx, int hp, int mp, int atk, int def, int speed)");
 
     this->setCentralWidget(split);
     this->adjustSize();
@@ -199,17 +212,20 @@ void ScriptMainWindow::initializeLexer()
 //    apis->add("createMaps?3(int tileId);?2");
 //    apis->add("foobar //isCool");
 
-    apis->add("sleep(int milliseconds) \nPausa o programa por X milisegundos");
+    apis->add("sleep (int milliseconds) \nPausa o programa por X milisegundos");
     apis->add("map:createMap (int width, int height, int defaultType, int defaultGfx) \nCria o mapa para ser desenhado.");
     apis->add("map:setTile (int posX, int posY, int gfx, int tileType) \nMuda o gráfico e o tipo do tile escolhido.");
 
-    apis->add("res:clearEntityMap()\nLimpa lista de entidades.");
-    apis->add("res:addGold(int px, int py, int gold)\nAdiciona dinheiro ao mapa.");
-    apis->add("res:addEntityByIndex(int px, int py, int ID)\nAdiciona entidade pelo ID da lista ao mapa.");
-    apis->add("res:addItemByIndex(int px, int py, int ID)\ndiciona item pelo ID da lista ao mapa.");
-    apis->add("res:addEntity(int px, int py, std::string name)\nAdiciona entidade pelo nome ao mapa.");
-    apis->add("res:addItem(int px, int py, std::string   name)\nAdiciona item pelo nome ao mapa.");
-    apis->add("res:addCustomEntity(int px, int py, Entity& ent)\nAdiciona uma entidade customizada ao mapa.");
+    apis->add("res:clearEntityMap ()\nLimpa lista de entidades.");
+    apis->add("res:clearItemMap ()\nLimpa lista de itens.");
+    apis->add("res:createEntity (string name)\nRetorna referencia a nova entidade criada.");
+    apis->add("res:createItem (string name)\nRetorna referencia a novo item criado.");
+    apis->add("res:addGold (int px, int py, int gold)\nAdiciona dinheiro ao mapa.");
+    apis->add("res:addEntityByIndex (int px, int py, int ID)\nAdiciona entidade pelo ID da lista ao mapa.");
+    apis->add("res:addItemByIndex (int px, int py, int ID)\ndiciona item pelo ID da lista ao mapa.");
+    apis->add("res:addEntity (int px, int py, std::string name)\nAdiciona entidade pelo nome ao mapa.");
+    apis->add("res:addItem (int px, int py, std::string   name)\nAdiciona item pelo nome ao mapa.");
+    apis->add("res:addCustomEntity (int px, int py, Entity& ent)\nAdiciona uma entidade customizada ao mapa.");
 
     apis->add("Tile.PASS Bloco passável.");
     apis->add("Tile.BLOCK Bloco não passável.");

@@ -174,10 +174,6 @@ void MapView::drawBackground(QPainter *painter, const QRectF &rect)
         painter->drawLines(linesX.data(), linesX.size());
         painter->drawLines(linesY.data(), linesY.size());
     }
-
-
-
-
 }
 
 void MapView::wheelEvent(QWheelEvent *event)
@@ -192,6 +188,7 @@ void MapView::wheelEvent(QWheelEvent *event)
     } else {
         // Zooming out
         scale(1.0 / scaleFactor, 1.0 / scaleFactor);
+        //this->resize(this->size().width()*scaleFactor, this->size().height()*scaleFactor);
     }
 
     // Don't call superclass handler here
@@ -611,7 +608,6 @@ void MapView::setEntity(int x, int y, Entity &ent)
     if( y < 0 || y >= mapHolder[0].size()) return;
 
     if(isValidEntityPos(QPoint(x,y)) == false) return;
-
 
     ent.mPos.setX(x);
     ent.mPos.setY(y);

@@ -11,6 +11,7 @@
 
 extern QVector<Entity> g_entitylist;
 extern QMap<std::string, Entity>    g_entitymap;
+extern QMap<std::string, Entity>    g_itemmap;
 
 extern QVector<QVector<int> > g_tilesetMapTypeInfo;
 extern bool g_showPath;

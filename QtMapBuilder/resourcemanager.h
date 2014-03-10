@@ -11,10 +11,14 @@ public:
     static ResourceManager ResourceControl;
 
     Entity* createEntity(std::string nome);
+    Entity* createItem(std::string nome);
     Entity* getEntity(std::string nome);
+    Entity* getItem(std::string nome);
     Entity* getEntityByIndex(int index);
+    Entity* getItemByIndex(int index);
 
     void    clearEntityMap();
+    void    clearItemMap();
 
     void    addGold(int px, int py, int gold);
     void    addEntityByIndex(int px, int py, int ID);

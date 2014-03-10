@@ -147,15 +147,19 @@ luabind::scope LuaManager::bindClasses()
     luabind::class_<ResourceManager>("ResourceManager")
         .def( luabind::constructor<>( ) )
         .def( "createEntity", &ResourceManager::createEntity)
+        .def( "createItem", &ResourceManager::createItem)
         .def( "getEntity", &ResourceManager::getEntity)
+        .def( "getItem", &ResourceManager::getItem)
         .def( "getEntityByIndex", &ResourceManager::getEntityByIndex)
-            .def( "addGold", &ResourceManager::addGold)
+        .def( "getItemByIndex", &ResourceManager::createItem)
+        .def( "addGold", &ResourceManager::addGold)
         .def( "addEntityByIndex", &ResourceManager::addEntityByIndex)
         .def( "addItemByIndex", &ResourceManager::addItemByIndex)
         .def( "addEntity", &ResourceManager::addEntity)
         .def( "addItem", &ResourceManager::addItem)
         .def( "addCustomEntity", &ResourceManager::addCustomEntity)
-        .def( "clearEntityMap", &ResourceManager::clearEntityMap),
+        .def( "clearEntityMap", &ResourceManager::clearEntityMap)
+        .def( "clearItemMap", &ResourceManager::clearEntityMap),
 
 
     luabind::class_<std::string>("stdString")
